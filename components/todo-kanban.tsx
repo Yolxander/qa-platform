@@ -15,24 +15,26 @@ import {
   IconPlayerPlay,
   IconCheck,
   IconRotateClockwise,
+  IconArrowRight,
 } from "@tabler/icons-react";
 
 interface TodoItem {
   id: number;
   title: string;
   issueLink: string;
-  status: "OPEN" | "IN_PROGRESS" | "DONE";
+  status: "OPEN" | "IN_PROGRESS" | "READY_FOR_QA" | "DONE";
   severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
   dueDate: string;
   environment: "Prod" | "Stage" | "Dev";
   assignee: string;
-  quickAction: "Start" | "Mark Done" | "Reopen";
+  quickAction: "Start" | "Mark Done" | "Send to QA" | "Reopen";
   column?: string;
 }
 
 const columns = [
   { id: "OPEN", name: "Open", color: "#6B7280" },
   { id: "IN_PROGRESS", name: "In Progress", color: "#F59E0B" },
+  { id: "READY_FOR_QA", name: "Ready for QA", color: "#8B5CF6" },
   { id: "DONE", name: "Done", color: "#10B981" },
 ];
 
@@ -57,6 +59,8 @@ const getQuickActionIcon = (action: string) => {
       return <IconPlayerPlay className="size-4" />;
     case "Mark Done":
       return <IconCheck className="size-4" />;
+    case "Send to QA":
+      return <IconArrowRight className="size-4" />;
     case "Reopen":
       return <IconRotateClockwise className="size-4" />;
     default:

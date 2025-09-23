@@ -10,6 +10,7 @@ import {
   IconPlayerPlay,
   IconCheck,
   IconRotateClockwise,
+  IconArrowRight,
 } from "@tabler/icons-react"
 import {
   ColumnDef,
@@ -58,12 +59,12 @@ interface TodoItem {
   id: number
   title: string
   issueLink: string
-  status: "OPEN" | "IN_PROGRESS" | "DONE"
+  status: "OPEN" | "IN_PROGRESS" | "READY_FOR_QA" | "DONE"
   severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
   dueDate: string
   environment: "Prod" | "Stage" | "Dev"
   assignee: string
-  quickAction: "Start" | "Mark Done" | "Reopen"
+  quickAction: "Start" | "Mark Done" | "Send to QA" | "Reopen"
 }
 
 const getStatusBadgeVariant = (status: string) => {
@@ -72,6 +73,8 @@ const getStatusBadgeVariant = (status: string) => {
       return "secondary"
     case "IN_PROGRESS":
       return "default"
+    case "READY_FOR_QA":
+      return "destructive"
     case "DONE":
       return "outline"
     default:
@@ -100,6 +103,8 @@ const getQuickActionIcon = (action: string) => {
       return <IconPlayerPlay className="size-4" />
     case "Mark Done":
       return <IconCheck className="size-4" />
+    case "Send to QA":
+      return <IconArrowRight className="size-4" />
     case "Reopen":
       return <IconRotateClockwise className="size-4" />
     default:
@@ -232,6 +237,7 @@ export function TodoTable({ data }: { data: TodoItem[] }) {
               <SelectItem value="all">All</SelectItem>
               <SelectItem value="OPEN">Open</SelectItem>
               <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+              <SelectItem value="READY_FOR_QA">Ready for QA</SelectItem>
               <SelectItem value="DONE">Done</SelectItem>
             </SelectContent>
           </Select>

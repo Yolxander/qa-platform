@@ -19,7 +19,7 @@
     "dueDate": "Tomorrow",
     "environment": "Stage",
     "assignee": "Alex Thompson",
-    "quickAction": "Mark Done"
+    "quickAction": "Send to QA"
   },
   {
     "id": 3,
@@ -52,7 +52,7 @@
     "dueDate": "Tomorrow",
     "environment": "Stage",
     "assignee": "Leila Ahmadi",
-    "quickAction": "Mark Done"
+    "quickAction": "Send to QA"
   },
   {
     "id": 6,
@@ -96,7 +96,7 @@
     "dueDate": "3d left",
     "environment": "Dev",
     "assignee": "Maria Garcia",
-    "quickAction": "Mark Done"
+    "quickAction": "Send to QA"
   },
   {
     "id": 10,
@@ -108,5 +108,60 @@
     "environment": "Prod",
     "assignee": "James Wilson",
     "quickAction": "Start"
+  },
+  {
+    "id": 11,
+    "title": "Refactor user authentication flow",
+    "issueLink": "#1244",
+    "status": "READY_FOR_QA",
+    "severity": "HIGH",
+    "dueDate": "Today",
+    "environment": "Stage",
+    "assignee": "Sarah Chen",
+    "quickAction": "Mark Done"
+  },
+  {
+    "id": 12,
+    "title": "Implement new dashboard widgets",
+    "issueLink": "#1245",
+    "status": "READY_FOR_QA",
+    "severity": "MEDIUM",
+    "dueDate": "Tomorrow",
+    "environment": "Stage",
+    "assignee": "Alex Thompson",
+    "quickAction": "Mark Done"
+  },
+  {
+    "id": 13,
+    "title": "Add user role management",
+    "issueLink": "#1246",
+    "status": "READY_FOR_QA",
+    "severity": "HIGH",
+    "dueDate": "Today",
+    "environment": "Dev",
+    "assignee": "Maya Johnson",
+    "quickAction": "Mark Done"
+  },
+  {
+    "id": 14,
+    "title": "Optimize image loading performance",
+    "issueLink": "#1247",
+    "status": "IN_PROGRESS",
+    "severity": "MEDIUM",
+    "dueDate": "Tomorrow",
+    "environment": "Stage",
+    "assignee": "David Kim",
+    "quickAction": "Send to QA"
+  },
+  {
+    "id": 15,
+    "title": "Fix cross-browser compatibility issues",
+    "issueLink": "#1248",
+    "status": "READY_FOR_QA",
+    "severity": "HIGH",
+    "dueDate": "3d left",
+    "environment": "Stage",
+    "assignee": "Leila Ahmadi",
+    "quickAction": "Mark Done"
   }
 ]
