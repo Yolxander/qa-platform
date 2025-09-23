@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { QuickCreateModal } from "@/components/quick-create-modal"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const getSeverityBadgeVariant = (severity: string) => {
   switch (severity) {
@@ -96,6 +97,7 @@ export function SiteHeader() {
               Quick Create
             </Button>
           </QuickCreateModal>
+          <ThemeToggle />
         </div>
       </div>
     </header>
