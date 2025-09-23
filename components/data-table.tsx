@@ -353,6 +353,7 @@ export function DataTable({
     pageIndex: 0,
     pageSize: 10,
   })
+  const [activeTab, setActiveTab] = React.useState("outline")
   const sortableId = React.useId()
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -360,13 +361,35 @@ export function DataTable({
     useSensor(KeyboardSensor, {})
   )
 
-  const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ id }) => id) || [],
-    [data]
-  )
+  // Apply column filters based on active tab
+  React.useEffect(() => {
+    if (activeTab === "outline") {
+      setColumnFilters([])
+    } else if (activeTab === "past-performance") {
+      setColumnFilters([{ id: "type", value: "HIGH" }])
+    } else if (activeTab === "key-personnel") {
+      setColumnFilters([{ id: "type", value: "CRITICAL" }])
+    } else if (activeTab === "focus-documents") {
+      // For recently updated, we'll sort the data instead of filtering
+      setColumnFilters([])
+    }
+  }, [activeTab])
 
+  const sortedData = React.useMemo(() => {
+    if (activeTab === "focus-documents") {
+      // Sort by most recent updates (limit field contains timestamp)
+      return [...data].sort((a, b) => new Date(b.limit).getTime() - new Date(a.limit).getTime()).slice(0, 5)
+    }
+    return data
+  }, [data, activeTab])
+
+  const dataIds = React.useMemo<UniqueIdentifier[]>(
+    () => sortedData?.map(({ id }) => id) || [],
+    [sortedData]
+  )
+  
   const table = useReactTable({
-    data,
+    data: sortedData,
     columns,
     state: {
       sorting,
@@ -403,14 +426,15 @@ export function DataTable({
 
   return (
     <Tabs
-      defaultValue="outline"
+      value={activeTab}
+      onValueChange={setActiveTab}
       className="w-full flex-col justify-start gap-6"
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
-        <Select defaultValue="outline">
+        <Select value={activeTab} onValueChange={setActiveTab}>
           <SelectTrigger
             className="flex w-fit @4xl/main:hidden"
             size="sm"
@@ -419,21 +443,21 @@ export function DataTable({
             <SelectValue placeholder="Select a view" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="outline">Outline</SelectItem>
-            <SelectItem value="past-performance">Past Performance</SelectItem>
-            <SelectItem value="key-personnel">Key Personnel</SelectItem>
-            <SelectItem value="focus-documents">Focus Documents</SelectItem>
+            <SelectItem value="outline">Ready for QA</SelectItem>
+            <SelectItem value="past-performance">High Priority</SelectItem>
+            <SelectItem value="key-personnel">Critical Issues</SelectItem>
+            <SelectItem value="focus-documents">Recently Updated</SelectItem>
           </SelectContent>
         </Select>
         <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
+          <TabsTrigger value="outline">Ready for QA</TabsTrigger>
           <TabsTrigger value="past-performance">
-            Past Performance <Badge variant="secondary">3</Badge>
+            High Priority <Badge variant="secondary">4</Badge>
           </TabsTrigger>
           <TabsTrigger value="key-personnel">
-            Key Personnel <Badge variant="secondary">2</Badge>
+            Critical Issues <Badge variant="secondary">2</Badge>
           </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
+          <TabsTrigger value="focus-documents">Recently Updated</TabsTrigger>
         </TabsList>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -471,7 +495,7 @@ export function DataTable({
           </DropdownMenu>
           <Button variant="outline" size="sm">
             <IconPlus />
-            <span className="hidden lg:inline">Add Section</span>
+            <span className="hidden lg:inline">Add Issue</span>
           </Button>
         </div>
       </div>
