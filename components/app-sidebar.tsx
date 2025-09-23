@@ -45,8 +45,8 @@ const data = {
       icon: IconChartBar,
     },
     {
-      title: "Recently Fixed",
-      url: "/recently-fixed",
+      title: "Bugs",
+      url: "/bugs",
       icon: IconUsers,
     },
   ],

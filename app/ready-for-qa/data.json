@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "title": "Fix login authentication bug",
+    "severity": "CRITICAL",
+    "environment": "Prod",
+    "linkedPR": "#PR-123",
+    "updatedAt": "2 hours ago",
+    "assignee": "Sarah Chen",
+    "action": "Verify"
+  },
+  {
+    "id": 2,
+    "title": "Update user profile validation",
+    "severity": "HIGH",
+    "environment": "Stage",
+    "linkedPR": "#PR-124",
+    "updatedAt": "1 day ago",
+    "assignee": "Alex Thompson",
+    "action": "Verify"
+  },
+  {
+    "id": 3,
+    "title": "Implement dark mode toggle",
+    "severity": "MEDIUM",
+    "environment": "Dev",
+    "linkedPR": "#PR-125",
+    "updatedAt": "3 days ago",
+    "assignee": "Maya Johnson",
+    "action": "Verify"
+  },
+  {
+    "id": 4,
+    "title": "Optimize database queries",
+    "severity": "HIGH",
+    "environment": "Prod",
+    "linkedPR": "#PR-126",
+    "updatedAt": "4 hours ago",
+    "assignee": "David Kim",
+    "action": "Verify"
+  },
+  {
+    "id": 5,
+    "title": "Add email notifications",
+    "severity": "MEDIUM",
+    "environment": "Stage",
+    "linkedPR": "#PR-127",
+    "updatedAt": "2 days ago",
+    "assignee": "Leila Ahmadi",
+    "action": "Verify"
+  },
+  {
+    "id": 6,
+    "title": "Fix responsive layout issues",
+    "severity": "LOW",
+    "environment": "Dev",
+    "linkedPR": "#PR-128",
+    "updatedAt": "1 week ago",
+    "assignee": "Thomas Wilson",
+    "action": "Verify"
+  },
+  {
+    "id": 7,
+    "title": "Implement API rate limiting",
+    "severity": "CRITICAL",
+    "environment": "Prod",
+    "linkedPR": "#PR-129",
+    "updatedAt": "6 hours ago",
+    "assignee": "Raj Patel",
+    "action": "Verify"
+  },
+  {
+    "id": 8,
+    "title": "Update documentation",
+    "severity": "LOW",
+    "environment": "Stage",
+    "linkedPR": "#PR-130",
+    "updatedAt": "5 days ago",
+    "assignee": "Nina Patel",
+    "action": "Verify"
+  },
+  {
+    "id": 9,
+    "title": "Add unit tests for auth module",
+    "severity": "MEDIUM",
+    "environment": "Dev",
+    "linkedPR": "#PR-131",
+    "updatedAt": "3 days ago",
+    "assignee": "Maria Garcia",
+    "action": "Verify"
+  },
+  {
+    "id": 10,
+    "title": "Fix memory leak in dashboard",
+    "severity": "CRITICAL",
+    "environment": "Prod",
+    "linkedPR": "#PR-132",
+    "updatedAt": "1 hour ago",
+    "assignee": "James Wilson",
+    "action": "Verify"
+  },
+  {
+    "id": 11,
+    "title": "Improve search functionality",
+    "severity": "HIGH",
+    "environment": "Stage",
+    "linkedPR": "#PR-133",
+    "updatedAt": "2 days ago",
+    "assignee": "Unassigned",
+    "action": "Verify"
+  },
+  {
+    "id": 12,
+    "title": "Add user permissions system",
+    "severity": "MEDIUM",
+    "environment": "Dev",
+    "linkedPR": "#PR-134",
+    "updatedAt": "4 days ago",
+    "assignee": "Sophia Martinez",
+    "action": "Verify"
+  }
+]
