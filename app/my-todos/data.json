@@ -1,0 +1,112 @@
+[
+  {
+    "id": 1,
+    "title": "Fix login authentication bug",
+    "issueLink": "#1234",
+    "status": "OPEN",
+    "severity": "CRITICAL",
+    "dueDate": "Today",
+    "environment": "Prod",
+    "assignee": "Sarah Chen",
+    "quickAction": "Start"
+  },
+  {
+    "id": 2,
+    "title": "Update user profile validation",
+    "issueLink": "#1235",
+    "status": "IN_PROGRESS",
+    "severity": "HIGH",
+    "dueDate": "Tomorrow",
+    "environment": "Stage",
+    "assignee": "Alex Thompson",
+    "quickAction": "Mark Done"
+  },
+  {
+    "id": 3,
+    "title": "Implement dark mode toggle",
+    "issueLink": "#1236",
+    "status": "DONE",
+    "severity": "MEDIUM",
+    "dueDate": "3d left",
+    "environment": "Dev",
+    "assignee": "Maya Johnson",
+    "quickAction": "Reopen"
+  },
+  {
+    "id": 4,
+    "title": "Optimize database queries",
+    "issueLink": "#1237",
+    "status": "OPEN",
+    "severity": "HIGH",
+    "dueDate": "Today",
+    "environment": "Prod",
+    "assignee": "David Kim",
+    "quickAction": "Start"
+  },
+  {
+    "id": 5,
+    "title": "Add email notifications",
+    "issueLink": "#1238",
+    "status": "IN_PROGRESS",
+    "severity": "MEDIUM",
+    "dueDate": "Tomorrow",
+    "environment": "Stage",
+    "assignee": "Leila Ahmadi",
+    "quickAction": "Mark Done"
+  },
+  {
+    "id": 6,
+    "title": "Fix responsive layout issues",
+    "issueLink": "#1239",
+    "status": "OPEN",
+    "severity": "LOW",
+    "dueDate": "3d left",
+    "environment": "Dev",
+    "assignee": "Thomas Wilson",
+    "quickAction": "Start"
+  },
+  {
+    "id": 7,
+    "title": "Implement API rate limiting",
+    "issueLink": "#1240",
+    "status": "DONE",
+    "severity": "HIGH",
+    "dueDate": "Today",
+    "environment": "Prod",
+    "assignee": "Raj Patel",
+    "quickAction": "Reopen"
+  },
+  {
+    "id": 8,
+    "title": "Update documentation",
+    "issueLink": "#1241",
+    "status": "OPEN",
+    "severity": "LOW",
+    "dueDate": "Tomorrow",
+    "environment": "Stage",
+    "assignee": "Nina Patel",
+    "quickAction": "Start"
+  },
+  {
+    "id": 9,
+    "title": "Add unit tests for auth module",
+    "issueLink": "#1242",
+    "status": "IN_PROGRESS",
+    "severity": "MEDIUM",
+    "dueDate": "3d left",
+    "environment": "Dev",
+    "assignee": "Maria Garcia",
+    "quickAction": "Mark Done"
+  },
+  {
+    "id": 10,
+    "title": "Fix memory leak in dashboard",
+    "issueLink": "#1243",
+    "status": "OPEN",
+    "severity": "CRITICAL",
+    "dueDate": "Today",
+    "environment": "Prod",
+    "assignee": "James Wilson",
+    "quickAction": "Start"
+  }
+]

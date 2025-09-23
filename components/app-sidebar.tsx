@@ -31,22 +31,22 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: IconDashboard,
     },
     {
       title: "My Todos",
-      url: "#",
+      url: "/my-todos",
       icon: IconListDetails,
     },
     {
       title: "Ready for QA",
-      url: "#",
+      url: "/ready-for-qa",
       icon: IconChartBar,
     },
     {
       title: "Recently Fixed",
-      url: "#",
+      url: "/recently-fixed",
       icon: IconUsers,
     },
   ],
