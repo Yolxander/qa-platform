@@ -99,78 +99,87 @@ const getEnvironmentBadgeVariant = (environment: string) => {
   }
 }
 
-const columns: ColumnDef<BugItem>[] = [
-  {
-    accessorKey: "title",
-    header: "Title",
-    cell: ({ row }) => (
-      <div className="flex flex-col">
-        <button 
-          className="text-left font-medium hover:text-primary hover:underline truncate max-w-[200px]"
-          onClick={() => console.log(`Opening bug detail for: ${row.original.title}`)}
-          title={row.original.title}
-        >
-          {row.original.title}
-        </button>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "severity",
-    header: "Severity",
-    cell: ({ row }) => (
-      <Badge variant={getSeverityBadgeVariant(row.original.severity)}>
-        {row.original.severity}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge variant={getStatusBadgeVariant(row.original.status)}>
-        {row.original.status}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "environment",
-    header: "Environment",
-    cell: ({ row }) => (
-      <Badge variant={getEnvironmentBadgeVariant(row.original.environment)}>
-        {row.original.environment}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "reporter",
-    header: "Reporter",
-    cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">{row.original.reporter}</span>
-    ),
-  },
-  {
-    accessorKey: "assignee",
-    header: "Assignee",
-    cell: ({ row }) => (
-      <span className={`text-sm ${row.original.assignee === "Unassigned" ? "text-muted-foreground italic" : ""}`}>
-        {row.original.assignee}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "updatedAt",
-    header: "Updated At",
-    cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">{row.original.updatedAt}</span>
-    ),
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }) => {
-      const router = useRouter()
-      return (
+export function BugsTable({ data }: { data: BugItem[] }) {
+  const router = useRouter()
+  const [rowSelection, setRowSelection] = React.useState({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+
+  const columns: ColumnDef<BugItem>[] = [
+    {
+      accessorKey: "title",
+      header: "Title",
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <button 
+            className="text-left font-medium hover:text-primary hover:underline truncate max-w-[200px]"
+            onClick={() => router.push(`/bug/${row.original.id}`)}
+            title={row.original.title}
+          >
+            {row.original.title}
+          </button>
+        </div>
+      ),
+      },
+    {
+      accessorKey: "severity",
+      header: "Severity",
+      cell: ({ row }) => (
+        <Badge variant={getSeverityBadgeVariant(row.original.severity)}>
+          {row.original.severity}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant={getStatusBadgeVariant(row.original.status)}>
+          {row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "environment",
+      header: "Environment",
+      cell: ({ row }) => (
+        <Badge variant={getEnvironmentBadgeVariant(row.original.environment)}>
+          {row.original.environment}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "reporter",
+      header: "Reporter",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">{row.original.reporter}</span>
+      ),
+    },
+    {
+      accessorKey: "assignee",
+      header: "Assignee",
+      cell: ({ row }) => (
+        <span className={`text-sm ${row.original.assignee === "Unassigned" ? "text-muted-foreground italic" : ""}`}>
+          {row.original.assignee}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "updatedAt",
+      header: "Updated At",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">{row.original.updatedAt}</span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
         <div className="flex gap-1">
           <Button
             variant="outline"
@@ -194,20 +203,9 @@ const columns: ColumnDef<BugItem>[] = [
             <IconMessage className="size-4" />
           </Button>
         </div>
-      )
+      ),
     },
-  },
-]
-
-export function BugsTable({ data }: { data: BugItem[] }) {
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 10,
-  })
+  ]
 
   const table = useReactTable({
     data,
