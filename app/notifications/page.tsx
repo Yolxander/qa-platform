@@ -3,12 +3,18 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/protected-route'
+import { AppSidebar } from "@/components/app-sidebar"
+import { SiteHeader } from "@/components/site-header"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { IconCheck, IconX, IconClock, IconUser, IconBuilding } from '@tabler/icons-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar"
 
 interface Invitation {
   id: string
@@ -189,10 +195,12 @@ function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Notifications</h1>
-          <p className="text-muted-foreground mt-2">Loading...</p>
+      <div className="flex items-center justify-between px-4 lg:px-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
+          <p className="text-muted-foreground">
+            Manage your team invitations and notifications
+          </p>
         </div>
       </div>
     )
@@ -202,26 +210,30 @@ function NotificationsPage() {
   const expiredInvitations = enrichedInvitations.filter(inv => new Date(inv.expires_at) <= new Date())
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Notifications</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your team invitations and notifications
-        </p>
+    <>
+      <div className="flex items-center justify-between px-4 lg:px-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
+          <p className="text-muted-foreground">
+            Manage your team invitations and notifications
+          </p>
+        </div>
       </div>
 
       {pendingInvitationsCount === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <IconUser className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No pending invitations</h3>
-            <p className="text-muted-foreground text-center">
-              You don't have any pending team invitations at the moment.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="px-4 lg:px-6">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <IconUser className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No pending invitations</h3>
+              <p className="text-muted-foreground text-center">
+                You don't have any pending team invitations at the moment.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
-        <div className="space-y-6">
+        <div className="px-4 lg:px-6 space-y-6">
           {validInvitations.length > 0 && (
             <div>
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -261,14 +273,33 @@ function NotificationsPage() {
           )}
         </div>
       )}
-    </div>
+    </>
   )
 }
 
 export default function Page() {
   return (
     <ProtectedRoute>
-      <NotificationsPage />
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <NotificationsPage />
+              </div>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     </ProtectedRoute>
   )
 }
