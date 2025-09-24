@@ -41,7 +41,8 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
     description: "",
     severity: "MEDIUM" as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
     environment: "Dev" as "Prod" | "Stage" | "Dev",
-    reporter: "",
+    url: "",
+    stepsToReproduce: "",
     assignee: ""
   })
 
@@ -71,7 +72,9 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
           description: formData.description,
           severity: formData.severity,
           environment: formData.environment,
-          reporter: formData.reporter,
+          url: formData.url,
+          steps_to_reproduce: formData.stepsToReproduce,
+          reporter: user.email || user.user_metadata?.name || "Unknown",
           assignee: formData.assignee || "Unassigned",
           user_id: user.id,
           project_id: currentProject.id
@@ -90,7 +93,8 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
         description: "",
         severity: "MEDIUM",
         environment: "Dev",
-        reporter: "",
+        url: "",
+        stepsToReproduce: "",
         assignee: ""
       })
       
@@ -145,9 +149,31 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="Detailed description of the bug, steps to reproduce, expected vs actual behavior"
+              placeholder="Detailed description of the bug, expected vs actual behavior"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="url">URL of Occurrence</Label>
+            <Input
+              id="url"
+              placeholder="https://example.com/page-where-bug-occurs"
+              value={formData.url}
+              onChange={(e) => handleInputChange("url", e.target.value)}
+              type="url"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="stepsToReproduce">Steps to Reproduce</Label>
+            <Textarea
+              id="stepsToReproduce"
+              placeholder="1. Go to the page&#10;2. Click on the button&#10;3. Observe the error"
+              value={formData.stepsToReproduce}
+              onChange={(e) => handleInputChange("stepsToReproduce", e.target.value)}
               rows={4}
             />
           </div>
@@ -189,27 +215,14 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="reporter">Reporter *</Label>
-              <Input
-                id="reporter"
-                placeholder="Your name"
-                value={formData.reporter}
-                onChange={(e) => handleInputChange("reporter", e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee</Label>
-              <Input
-                id="assignee"
-                placeholder="Team member name (optional)"
-                value={formData.assignee}
-                onChange={(e) => handleInputChange("assignee", e.target.value)}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="assignee">Assignee</Label>
+            <Input
+              id="assignee"
+              placeholder="Team member name (optional)"
+              value={formData.assignee}
+              onChange={(e) => handleInputChange("assignee", e.target.value)}
+            />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

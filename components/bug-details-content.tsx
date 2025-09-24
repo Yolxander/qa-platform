@@ -182,6 +182,7 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
         console.error('Error fetching images:', error)
         setUploadedImages([])
       } else {
+        console.log('Fetched images:', data)
         setUploadedImages(data || [])
       }
     } catch (error) {
@@ -266,6 +267,39 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  const getImageUrl = (image: BugImage) => {
+    // If the URL is already a full URL, return it
+    if (image.url.startsWith('http')) {
+      console.log('Using existing full URL:', image.url)
+      return image.url
+    }
+    
+    // Use Supabase client to get the public URL
+    if (supabase) {
+      const { data: { publicUrl } } = supabase.storage
+        .from('bug-images')
+        .getPublicUrl(image.url)
+      console.log('Generated new URL from path:', image.url, '->', publicUrl)
+      return publicUrl
+    }
+    
+    // Fallback: construct URL manually
+    const fallbackUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/bug-images/${image.url}`
+    console.log('Using fallback URL:', fallbackUrl)
+    return fallbackUrl
+  }
+
+  const testImageUrl = async (url: string) => {
+    try {
+      const response = await fetch(url, { method: 'HEAD' })
+      console.log('Image URL test:', url, 'Status:', response.status)
+      return response.ok
+    } catch (error) {
+      console.error('Image URL test failed:', url, error)
+      return false
+    }
   }
 
   return (
@@ -365,10 +399,19 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
                 <div key={image.id} className="relative group">
                   <div className="relative">
                     <img
-                      src={image.url}
+                      src={getImageUrl(image)}
                       alt={image.name}
                       className="w-full h-48 object-cover rounded-md border hover:opacity-90 transition-opacity cursor-pointer"
-                      onClick={() => window.open(image.url, '_blank')}
+                      onClick={() => window.open(getImageUrl(image), '_blank')}
+                      onError={(e) => {
+                        console.error('Image failed to load:', getImageUrl(image), 'Original URL:', image.url, e)
+                        // Show a placeholder instead of hiding
+                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTI1SDIyNVYxNzVIMTc1VjEyNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTE5NSAxNDVIMjA1VjE1NUgxOTVWMTQ1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K'
+                        e.currentTarget.alt = 'Image failed to load'
+                      }}
+                      onLoad={() => {
+                        console.log('Image loaded successfully:', getImageUrl(image))
+                      }}
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-md flex items-center justify-center">
                       <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm">
@@ -396,6 +439,17 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
                     <div className="text-xs text-muted-foreground">
                       {formatFileSize(image.size)} • {new Date(image.created_at).toLocaleDateString()}
                     </div>
+                    <div className="text-xs text-muted-foreground truncate" title={getImageUrl(image)}>
+                      URL: {getImageUrl(image)}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-1 h-6 text-xs"
+                      onClick={() => testImageUrl(getImageUrl(image))}
+                    >
+                      Test URL
+                    </Button>
                   </div>
                 </div>
               ))}

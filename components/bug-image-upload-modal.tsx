@@ -141,6 +141,9 @@ export function BugImageUploadModal({
           .from('bug-images')
           .getPublicUrl(filePath)
 
+        console.log('Generated public URL:', publicUrl)
+        console.log('File path:', filePath)
+
         // Save image record to database
         const { data: dbData, error: dbError } = await supabase
           .from('bug_images')

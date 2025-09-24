@@ -37,6 +37,8 @@ interface EditBugModalProps {
     environment: string
     assignee: string
     reporter: string
+    url?: string
+    steps_to_reproduce?: string
   }
   onBugUpdated?: () => void
 }
@@ -60,7 +62,9 @@ export function EditBugModal({ open, onOpenChange, bug, onBugUpdated }: EditBugM
     severity: "MEDIUM" as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
     status: "Open" as "Open" | "In Progress" | "Closed",
     environment: "Dev" as "Prod" | "Stage" | "Dev",
-    assignee: ""
+    assignee: "",
+    url: "",
+    stepsToReproduce: ""
   })
 
   // Load data when modal opens
@@ -74,7 +78,9 @@ export function EditBugModal({ open, onOpenChange, bug, onBugUpdated }: EditBugM
         severity: bug.severity as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
         status: bug.status as "Open" | "In Progress" | "Closed",
         environment: bug.environment as "Prod" | "Stage" | "Dev",
-        assignee: bug.assignee || "unassigned"
+        assignee: bug.assignee || "unassigned",
+        url: bug.url || "",
+        stepsToReproduce: bug.steps_to_reproduce || ""
       })
     }
   }, [open, currentProject, bug])
@@ -210,6 +216,28 @@ export function EditBugModal({ open, onOpenChange, bug, onBugUpdated }: EditBugM
               placeholder="Describe the bug in detail..."
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="url">URL of Occurrence</Label>
+            <Input
+              id="url"
+              placeholder="https://example.com/page-where-bug-occurs"
+              value={formData.url}
+              onChange={(e) => handleInputChange("url", e.target.value)}
+              type="url"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="stepsToReproduce">Steps to Reproduce</Label>
+            <Textarea
+              id="stepsToReproduce"
+              placeholder="1. Go to the page&#10;2. Click on the button&#10;3. Observe the error"
+              value={formData.stepsToReproduce}
+              onChange={(e) => handleInputChange("stepsToReproduce", e.target.value)}
               rows={4}
             />
           </div>
