@@ -19,8 +19,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Sidebar,
   SidebarContent,
@@ -59,7 +70,7 @@ const data = {
       icon: IconUsers,
     },
   ],
-  companies: [
+  projects: [
     { id: "merjj", name: "Merjj CMS", icon: IconBuilding },
     { id: "acme", name: "Acme Inc.", icon: IconBuilding },
     { id: "techcorp", name: "TechCorp Solutions", icon: IconBuilding },
@@ -67,11 +78,63 @@ const data = {
   ],
 }
 
+function AddProjectForm({ onSubmit }: { onSubmit: (projectName: string) => void }) {
+  const [projectName, setProjectName] = React.useState("")
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (projectName.trim()) {
+      onSubmit(projectName.trim())
+      setProjectName("")
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="project-name">Project Name</Label>
+        <Input
+          id="project-name"
+          placeholder="Enter project name..."
+          value={projectName}
+          onChange={(e) => setProjectName(e.target.value)}
+          required
+        />
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setProjectName("")}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={!projectName.trim()}>
+          Create Project
+        </Button>
+      </div>
+    </form>
+  )
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
-  const [selectedCompany, setSelectedCompany] = React.useState("merjj")
+  const [selectedProject, setSelectedProject] = React.useState("merjj")
+  const [projects, setProjects] = React.useState(data.projects)
+  const [addProjectModalOpen, setAddProjectModalOpen] = React.useState(false)
   
-  const currentCompany = data.companies.find(company => company.id === selectedCompany) || data.companies[0]
+  const currentProject = projects.find(project => project.id === selectedProject) || projects[0]
+  
+  const handleAddProject = (projectName: string) => {
+    const newProject = {
+      id: projectName.toLowerCase().replace(/\s+/g, '-'),
+      name: projectName,
+      icon: IconBuilding
+    }
+    setProjects(prev => [...prev, newProject])
+    setSelectedProject(newProject.id)
+    setAddProjectModalOpen(false)
+  }
   
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -85,24 +148,44 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 >
                   <div className="flex items-center gap-2">
                     <IconInnerShadowTop className="!size-5" />
-                    <span className="text-base font-semibold">{currentCompany.name}</span>
+                    <span className="text-base font-semibold">{currentProject.name}</span>
                   </div>
                   <IconChevronDown className="size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
-                {data.companies.map((company) => (
+                {projects.map((project) => (
                   <DropdownMenuItem
-                    key={company.id}
-                    onClick={() => setSelectedCompany(company.id)}
+                    key={project.id}
+                    onClick={() => setSelectedProject(project.id)}
                     className={`flex items-center gap-2 ${
-                      selectedCompany === company.id ? "bg-accent" : ""
+                      selectedProject === project.id ? "bg-accent" : ""
                     }`}
                   >
-                    <company.icon className="size-4" />
-                    <span>{company.name}</span>
+                    <project.icon className="size-4" />
+                    <span>{project.name}</span>
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuSeparator />
+                <Dialog open={addProjectModalOpen} onOpenChange={setAddProjectModalOpen}>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <div className="flex items-center gap-2">
+                        <IconBuilding className="size-4" />
+                        <span>Add Project</span>
+                      </div>
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Add New Project</DialogTitle>
+                      <DialogDescription>
+                        Create a new project to organize your work and team collaboration.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <AddProjectForm onSubmit={handleAddProject} />
+                  </DialogContent>
+                </Dialog>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
