@@ -26,12 +26,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { NewTodoForm } from "@/components/new-todo-form"
+import { QuickAddForm } from "@/components/quick-add-form"
+import { AssignTasksForm } from "@/components/assign-tasks-form"
 
 interface QuickActionOption {
   title: string
   description: string
   icon: React.ComponentType<{ className?: string }>
   action: () => void
+  component?: React.ComponentType<any>
 }
 
 const getPageActions = (pathname: string): QuickActionOption[] => {
@@ -99,24 +103,21 @@ const getPageActions = (pathname: string): QuickActionOption[] => {
           description: "Create a new task",
           icon: IconClipboardList,
           action: () => console.log("New Todo clicked"),
+          component: NewTodoForm,
         },
         {
           title: "Quick Add",
           description: "Add multiple tasks quickly",
           icon: IconAdd,
           action: () => console.log("Quick Add clicked"),
-        },
-        {
-          title: "Import Tasks",
-          description: "Import tasks from file",
-          icon: IconDownload,
-          action: () => console.log("Import Tasks clicked"),
+          component: QuickAddForm,
         },
         {
           title: "Assign Tasks",
           description: "Assign tasks to team members",
           icon: IconUsers,
           action: () => console.log("Assign Tasks clicked"),
+          component: AssignTasksForm,
         },
       ]
     
@@ -239,9 +240,11 @@ const getPageActions = (pathname: string): QuickActionOption[] => {
 
 interface QuickCreateModalProps {
   children: React.ReactNode
+  onTodoCreated?: () => void
+  onTasksAssigned?: () => void
 }
 
-export function QuickCreateModal({ children }: QuickCreateModalProps) {
+export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned }: QuickCreateModalProps) {
   const [open, setOpen] = React.useState(false)
   const pathname = usePathname()
   const quickActionOptions = getPageActions(pathname)
@@ -311,6 +314,35 @@ export function QuickCreateModal({ children }: QuickCreateModalProps) {
         <div className="grid grid-cols-1 gap-3 py-4">
           {quickActionOptions.map((option) => {
             const IconComponent = option.icon
+            const Component = option.component
+            
+            if (Component) {
+              return (
+                <Component
+                  key={option.title}
+                  onTodoCreated={onTodoCreated}
+                  onTasksAssigned={onTasksAssigned}
+                >
+                  <Button
+                    variant="outline"
+                    className="h-auto p-4 justify-start text-left w-full"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                        <IconComponent className="size-5 text-primary" />
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">{option.title}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {option.description}
+                        </span>
+                      </div>
+                    </div>
+                  </Button>
+                </Component>
+              )
+            }
+            
             return (
               <Button
                 key={option.title}

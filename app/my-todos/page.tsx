@@ -1,21 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/app-sidebar"
 import { TodoTable } from "@/components/todo-table"
 import { TodoKanban } from "@/components/todo-kanban"
 import { ViewToggle } from "@/components/view-toggle"
 import { SiteHeader } from "@/components/site-header"
 import { ProtectedRoute } from "@/components/protected-route"
+import { QuickCreateModal } from "@/components/quick-create-modal"
+import { NewTodoForm } from "@/components/new-todo-form"
+import { QuickAddForm } from "@/components/quick-add-form"
+import { AssignTasksForm } from "@/components/assign-tasks-form"
+import { Button } from "@/components/ui/button"
+import { IconPlus } from "@tabler/icons-react"
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { supabase } from "@/lib/supabase"
+import { Todo } from "@/lib/supabase"
 
 import todoData from "./data.json"
 
 export default function Page() {
   const [currentView, setCurrentView] = useState<"table" | "kanban">("table");
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load todos from Supabase
+  const loadTodos = async () => {
+    try {
+      setLoading(true);
+      
+      if (!supabase) {
+        console.warn("Supabase not configured, using static data");
+        setTodos(todoData as any);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('todos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTodos(data || []);
+    } catch (error) {
+      console.error("Error loading todos:", error);
+      // Fallback to static data if Supabase fails
+      setTodos(todoData as any);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTodos();
+  }, []);
+
+  const handleTodoCreated = () => {
+    loadTodos();
+  };
+
+  const handleTasksAssigned = () => {
+    loadTodos();
+  };
+
+  // Convert Supabase todos to the format expected by components
+  const formattedTodos = todos.map(todo => ({
+    id: todo.id,
+    title: todo.title,
+    issueLink: todo.issue_link || "",
+    status: todo.status,
+    severity: todo.severity,
+    dueDate: todo.due_date,
+    environment: todo.environment,
+    assignee: todo.assignee,
+    quickAction: todo.quick_action
+  }));
 
   return (
     <ProtectedRoute>
@@ -40,15 +102,31 @@ export default function Page() {
                       Manage your assigned tasks and track progress
                     </p>
                   </div>
-                  <ViewToggle 
-                    currentView={currentView} 
-                    onViewChange={setCurrentView} 
-                  />
+                  <div className="flex items-center gap-2">
+                    <ViewToggle 
+                      currentView={currentView} 
+                      onViewChange={setCurrentView} 
+                    />
+                    <QuickCreateModal 
+                      onTodoCreated={handleTodoCreated}
+                      onTasksAssigned={handleTasksAssigned}
+                    >
+                      <Button size="sm">
+                        <IconPlus className="size-4" />
+                      </Button>
+                    </QuickCreateModal>
+                  </div>
                 </div>
-                {currentView === "table" ? (
-                  <TodoTable data={todoData} />
+
+
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-muted-foreground">Loading todos...</div>
+                  </div>
+                ) : currentView === "table" ? (
+                  <TodoTable data={formattedTodos} />
                 ) : (
-                  <TodoKanban data={todoData} />
+                  <TodoKanban data={formattedTodos} />
                 )}
               </div>
             </div>

@@ -24,7 +24,7 @@ export default function IntegrationsSection() {
                                 <MediaWiki className="size-9" />
                             </div>
                             <blockquote>
-                                <p>"This platform has transformed how we manage our development workflow. The bug tracking and task management features are exactly what our team needed."</p>
+                                <p>&ldquo;This platform has transformed how we manage our development workflow. The bug tracking and task management features are exactly what our team needed.&rdquo;</p>
                                 <div className="mt-2 flex gap-2 text-sm">
                                     <cite>Sarah Chen</cite>
                                     <p className="text-muted-foreground">Lead Developer, TechCorp</p>

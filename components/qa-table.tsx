@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
 import {
   IconChevronDown,
   IconChevronLeft,
@@ -162,12 +161,11 @@ const columns: ColumnDef<QAItem>[] = [
     accessorKey: "action",
     header: "Action",
     cell: ({ row }) => {
-      const router = useRouter()
       return (
         <Button
           size="sm"
           className="h-8 gap-2"
-          onClick={() => router.push(`/verify/${row.original.id}`)}
+          onClick={() => window.location.href = `/verify/${row.original.id}`}
         >
           <IconCheck className="size-4" />
           {row.original.action}

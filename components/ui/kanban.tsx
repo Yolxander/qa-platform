@@ -11,7 +11,7 @@ interface KanbanColumn {
 
 interface KanbanData {
   id: string | number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface KanbanContextType {
