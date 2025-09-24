@@ -11,6 +11,10 @@ import {
   IconChevronDown,
   IconBuilding,
   IconUsersGroup,
+  IconLock,
+  IconRobot,
+  IconMessageCircle,
+  IconSettings,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
