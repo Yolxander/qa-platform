@@ -34,6 +34,16 @@ export interface Bug {
   created_at: string
   updated_at: string
   user_id: string
+  project_id?: string
+}
+
+export interface Project {
+  id: string
+  name: string
+  description?: string
+  user_id: string
+  created_at: string
+  updated_at: string
 }
 
 export interface Todo {
@@ -49,4 +59,5 @@ export interface Todo {
   created_at: string
   updated_at: string
   user_id: string
+  project_id?: string
 }

@@ -41,6 +41,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/contexts/AuthContext"
 
 const data = {
   navMain: [
@@ -73,14 +74,25 @@ const data = {
   ],
 }
 
-function AddProjectForm({ onSubmit }: { onSubmit: (projectName: string) => void }) {
+function AddProjectForm({ onSubmit, onClose }: { onSubmit: (projectName: string, description?: string) => void; onClose: () => void }) {
   const [projectName, setProjectName] = React.useState("")
+  const [description, setDescription] = React.useState("")
+  const [loading, setLoading] = React.useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (projectName.trim()) {
-      onSubmit(projectName.trim())
-      setProjectName("")
+      setLoading(true)
+      try {
+        await onSubmit(projectName.trim(), description.trim() || undefined)
+        setProjectName("")
+        setDescription("")
+        onClose()
+      } catch (error) {
+        console.error('Error creating project:', error)
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -96,16 +108,30 @@ function AddProjectForm({ onSubmit }: { onSubmit: (projectName: string) => void 
           required
         />
       </div>
+      <div className="space-y-2">
+        <Label htmlFor="project-description">Description (Optional)</Label>
+        <Input
+          id="project-description"
+          placeholder="Enter project description..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
       <div className="flex justify-end gap-2">
         <Button
           type="button"
           variant="outline"
-          onClick={() => setProjectName("")}
+          onClick={() => {
+            setProjectName("")
+            setDescription("")
+            onClose()
+          }}
+          disabled={loading}
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={!projectName.trim()}>
-          Create Project
+        <Button type="submit" disabled={!projectName.trim() || loading}>
+          {loading ? "Creating..." : "Create Project"}
         </Button>
       </div>
     </form>
@@ -114,21 +140,17 @@ function AddProjectForm({ onSubmit }: { onSubmit: (projectName: string) => void 
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
-  const [selectedProject, setSelectedProject] = React.useState("merjj")
-  const [projects, setProjects] = React.useState(data.projects)
+  const { projects, currentProject, createProject, setCurrentProject } = useAuth()
   const [addProjectModalOpen, setAddProjectModalOpen] = React.useState(false)
   
-  const currentProject = projects.find(project => project.id === selectedProject) || projects[0]
-  
-  const handleAddProject = (projectName: string) => {
-    const newProject = {
-      id: projectName.toLowerCase().replace(/\s+/g, '-'),
-      name: projectName,
-      icon: IconBuilding
+  const handleAddProject = async (projectName: string, description?: string) => {
+    const { error, data } = await createProject(projectName, description)
+    if (error) {
+      console.error('Error creating project:', error)
+      alert(`Error creating project: ${error.message || 'Unknown error'}. Please check the console for more details.`)
+    } else if (data) {
+      setCurrentProject(data)
     }
-    setProjects(prev => [...prev, newProject])
-    setSelectedProject(newProject.id)
-    setAddProjectModalOpen(false)
   }
   
   return (
@@ -143,7 +165,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 >
                   <div className="flex items-center gap-2">
                     <IconInnerShadowTop className="!size-5" />
-                    <span className="text-base font-semibold">{currentProject.name}</span>
+                    <span className="text-base font-semibold">{currentProject?.name || "No Project"}</span>
                   </div>
                   <IconChevronDown className="size-4" />
                 </SidebarMenuButton>
@@ -152,12 +174,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {projects.map((project) => (
                   <DropdownMenuItem
                     key={project.id}
-                    onClick={() => setSelectedProject(project.id)}
+                    onClick={() => setCurrentProject(project)}
                     className={`flex items-center gap-2 ${
-                      selectedProject === project.id ? "bg-accent" : ""
+                      currentProject?.id === project.id ? "bg-accent" : ""
                     }`}
                   >
-                    <project.icon className="size-4" />
+                    <IconBuilding className="size-4" />
                     <span>{project.name}</span>
                   </DropdownMenuItem>
                 ))}
@@ -178,7 +200,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         Create a new project to organize your work and team collaboration.
                       </DialogDescription>
                     </DialogHeader>
-                    <AddProjectForm onSubmit={handleAddProject} />
+                    <AddProjectForm 
+                      onSubmit={handleAddProject} 
+                      onClose={() => setAddProjectModalOpen(false)}
+                    />
                   </DialogContent>
                 </Dialog>
               </DropdownMenuContent>
