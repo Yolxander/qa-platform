@@ -34,7 +34,7 @@ import { useAuth } from "@/contexts/AuthContext"
 export function NavUser() {
   const { isMobile } = useSidebar()
   const router = useRouter()
-  const { user, signOut } = useAuth()
+  const { user, signOut, pendingInvitationsCount } = useAuth()
 
   const handleLogout = async () => {
     await signOut()
@@ -101,9 +101,14 @@ export function NavUser() {
                 <IconCreditCard />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/notifications')}>
                 <IconNotification />
                 Notifications
+                {pendingInvitationsCount > 0 && (
+                  <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                    {pendingInvitationsCount}
+                  </span>
+                )}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

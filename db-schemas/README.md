@@ -42,6 +42,28 @@ This folder contains all the database schema files for the Smasher Light applica
 - Automatic team creation when projects are created
 - Performance indexes and triggers
 
+### `functions/` Directory
+**Database Functions** - Contains SQL scripts for database functions:
+
+#### `complete-invitations-setup.sql`
+**Complete invitation system setup** - Creates the full invitation system including:
+- `team_invitations` table with proper structure
+- All required indexes and RLS policies
+- Database functions for invitation management
+- Proper permissions and triggers
+
+#### `fix-invitations-functions.sql`
+**Quick function fix** - Creates only the missing database functions:
+- `get_user_invitations()` - Fetches user's pending invitations
+- `create_team_invitation()` - Creates new invitations
+- `accept_team_invitation()` - Accepts invitations and adds user to team
+
+#### `test-functions.sql`
+**Function verification** - Tests and verifies that all functions exist:
+- Checks function existence
+- Validates table structure
+- Provides status reports
+
 ## Database Structure
 
 ### Tables
