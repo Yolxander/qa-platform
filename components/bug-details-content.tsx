@@ -303,9 +303,9 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
   }
 
   return (
-    <div className="px-4 lg:px-6 space-y-6">
+    <div className="px-4 lg:px-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 mb-6">
         <Button
           variant="outline"
           size="sm"
@@ -315,190 +315,187 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
           <IconArrowLeft className="size-4" />
           Back to Bugs
         </Button>
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{bug.title}</h1>
+      </div>
+
+      {/* E-commerce Product Overview Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Section - Bug Screenshots/Visuals */}
+        <div className="space-y-4">
+          {/* Main Screenshot */}
+          <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            {uploadedImages.length > 0 ? (
+              <img
+                src={getImageUrl(uploadedImages[0])}
+                alt="Main bug screenshot"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTI1SDIyNVYxNzVIMTc1VjEyNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTE5NSAxNDVIMjA1VjE1NUgxOTVWMTQ1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K'
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <div className="text-center text-gray-500">
+                  <IconPhoto className="size-12 mx-auto mb-2" />
+                  <p>No screenshots available</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Thumbnail Screenshots */}
+          {uploadedImages.length > 1 && (
+            <div className="grid grid-cols-2 gap-2">
+              {uploadedImages.slice(1, 5).map((image, index) => (
+                <div key={image.id} className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
+                  <img
+                    src={getImageUrl(image)}
+                    alt={`Screenshot ${index + 2}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTI1SDIyNVYxNzVIMTc1VjEyNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTE5NSAxNDVIMjA1VjE1NUgxOTVWMTQ1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K'
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right Section - Bug Details */}
+        <div className="space-y-6">
+          {/* Bug Header */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge variant={getSeverityBadgeVariant(bug.severity)}>
+                  {bug.severity}
+                </Badge>
+                <Badge variant={getStatusBadgeVariant(bug.status)}>
+                  {bug.status}
+                </Badge>
+                <Badge variant={getEnvironmentBadgeVariant(bug.environment)}>
+                  {bug.environment}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm">
+                  <IconExternalLink className="size-4" />
+                </Button>
+                <Button variant="outline" size="sm">
+                  <IconMessage className="size-4" />
+                </Button>
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">{bug.title}</h1>
+            <p className="text-muted-foreground">Bug Report #{bug.id}</p>
+          </div>
+
+          {/* Bug Metadata */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Reporter:</span>
+                <span className="ml-2 font-medium">{bug.reporter}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Assignee:</span>
+                <span className="ml-2 font-medium">{bug.assignee}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Created:</span>
+                <span className="ml-2 font-medium">{new Date(bug.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Updated:</span>
+                <span className="ml-2 font-medium">{bug.updatedAt}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* URL of Occurrence */}
+          {bug.url && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">URL of Occurrence</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono bg-muted px-3 py-2 rounded-md flex-1">
+                  {bug.url}
+                </span>
+                <Button variant="outline" size="sm">
+                  <IconExternalLink className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Steps to Reproduce */}
+          {bug.stepsToReproduce && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Steps to Reproduce</h3>
+              <div className="text-sm bg-muted p-4 rounded-md">
+                <div className="whitespace-pre-line">{bug.stepsToReproduce}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Expected vs Actual */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Expected vs Actual</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-green-600">Expected Result</Label>
+                <div className="text-sm bg-green-50 p-3 rounded-md border border-green-200">
+                  {bug.expectedResult}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-red-600">Actual Result</Label>
+                <div className="text-sm bg-red-50 p-3 rounded-md border border-red-200">
+                  {bug.actualResult}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button className="flex-1">
+              <IconMessage className="size-4 mr-2" />
+              Add Comment
+            </Button>
+            <Button variant="outline" className="flex-1">
+              <IconPhoto className="size-4 mr-2" />
+              Add Screenshot
+            </Button>
+          </div>
+
+          {/* Guarantees/Policies */}
+          <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+            <div className="text-center">
+              <div className="text-sm font-medium">Priority</div>
+              <div className="text-xs text-muted-foreground">{bug.severity}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium">Environment</div>
+              <div className="text-xs text-muted-foreground">{bug.environment}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium">Status</div>
+              <div className="text-xs text-muted-foreground">{bug.status}</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* URL of Occurrence and Steps to Reproduce - Side by side on larger screens */}
-      <div className="grid grid-cols-1 @container/bug-details:grid-cols-2 gap-6">
+
+
+      {/* Comments Section */}
+      <div className="mt-8">
         <Card>
           <CardHeader>
-            <CardTitle>URL of Occurrence</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                {bug.url}
-              </span>
-              <Button variant="outline" size="sm">
-                <IconExternalLink className="size-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Steps to Reproduce</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="whitespace-pre-line text-sm">
-              {bug.stepsToReproduce}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Expected vs Actual */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Expected vs Actual</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-green-600">Expected Result</Label>
-              <div className="text-sm bg-green-50 p-3 rounded-md border border-green-200">
-                {bug.expectedResult}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-red-600">Actual Result</Label>
-              <div className="text-sm bg-red-50 p-3 rounded-md border border-red-200">
-                {bug.actualResult}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Screenshots */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <IconPhoto className="size-5" />
-            Screenshots
-            {uploadedImages.length > 0 && (
-              <span className="text-sm font-normal text-muted-foreground">
-                ({uploadedImages.length} image{uploadedImages.length !== 1 ? 's' : ''})
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingImages ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-muted-foreground">Loading images...</div>
-            </div>
-          ) : uploadedImages.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {uploadedImages.map((image) => (
-                <div key={image.id} className="relative group">
-                  <div className="relative">
-                    <img
-                      src={getImageUrl(image)}
-                      alt={image.name}
-                      className="w-full h-48 object-cover rounded-md border hover:opacity-90 transition-opacity cursor-pointer"
-                      onClick={() => window.open(getImageUrl(image), '_blank')}
-                      onError={(e) => {
-                        console.error('Image failed to load:', getImageUrl(image), 'Original URL:', image.url, e)
-                        // Show a placeholder instead of hiding
-                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTI1SDIyNVYxNzVIMTc1VjEyNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTE5NSAxNDVIMjA1VjE1NUgxOTVWMTQ1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K'
-                        e.currentTarget.alt = 'Image failed to load'
-                      }}
-                      onLoad={() => {
-                        console.log('Image loaded successfully:', getImageUrl(image))
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-md flex items-center justify-center">
-                      <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm">
-                        Click to view full size
-                      </span>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (confirm('Are you sure you want to delete this image?')) {
-                          handleDeleteImage(image.id)
-                        }
-                      }}
-                    >
-                      <IconTrash className="size-4" />
-                    </Button>
-                  </div>
-                  <div className="mt-2 space-y-1">
-                    <div className="text-sm font-medium truncate" title={image.name}>
-                      {image.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatFileSize(image.size)} • {new Date(image.created_at).toLocaleDateString()}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate" title={getImageUrl(image)}>
-                      URL: {getImageUrl(image)}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="mt-1 h-6 text-xs"
-                      onClick={() => testImageUrl(getImageUrl(image))}
-                    >
-                      Test URL
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <IconPhoto className="mx-auto size-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No screenshots uploaded yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Upload images from the Bugs page to provide visual context
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Linked PR/Commit and Comments - Side by side on larger screens */}
-      <div className="grid grid-cols-1 @container/bug-details:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Linked PR/Commit & External Ticket</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium">Pull Request:</Label>
-                <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                  {bug.linkedPR}
-                </span>
-                <Button variant="outline" size="sm">
-                  <IconExternalLink className="size-4" />
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium">External Ticket:</Label>
-                <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                  {bug.externalTicketId}
-                </span>
-                <Button variant="outline" size="sm">
-                  <IconExternalLink className="size-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Comments</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <IconMessage className="size-5" />
+              Comments & Discussion
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -543,35 +540,6 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Activity Log */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Activity Log</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {activityLog.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm">{activity.action}</span>
-                    <span className="text-xs text-muted-foreground">by {activity.user}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    <IconClock className="size-3 inline mr-1" />
-                    {activity.timestamp}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {activity.details}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
