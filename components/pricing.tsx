@@ -1,9 +1,21 @@
+"use client"
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Check } from 'lucide-react'
+import { ComingSoonModal } from '@/components/coming-soon-modal'
 
 export default function Pricing() {
+    const [modalOpen, setModalOpen] = useState(false)
+    const [selectedPlan, setSelectedPlan] = useState("")
+
+    const handleComingSoonClick = (planName: string) => {
+        setSelectedPlan(planName)
+        setModalOpen(true)
+    }
+
     return (
         <section id="pricing">
             <div className="mx-auto max-w-6xl px-6">
@@ -55,9 +67,9 @@ export default function Pricing() {
                             <CardDescription className="text-sm">Per editor</CardDescription>
 
                             <Button
-                                asChild
-                                className="mt-4 w-full">
-                                <Link href="">Coming Soon</Link>
+                                className="mt-4 w-full"
+                                onClick={() => handleComingSoonClick("Pro Plan")}>
+                                Coming Soon
                             </Button>
                         </CardHeader>
 
@@ -86,10 +98,10 @@ export default function Pricing() {
                             <CardDescription className="text-sm">Per editor</CardDescription>
 
                             <Button
-                                asChild
                                 variant="outline"
-                                className="mt-4 w-full">
-                                <Link href="">Coming Soon</Link>
+                                className="mt-4 w-full"
+                                onClick={() => handleComingSoonClick("Startup Plan")}>
+                                Coming Soon
                             </Button>
                         </CardHeader>
 
@@ -110,6 +122,12 @@ export default function Pricing() {
                     </Card>
                 </div>
             </div>
+            
+            <ComingSoonModal
+                open={modalOpen}
+                onOpenChange={setModalOpen}
+                planName={selectedPlan}
+            />
         </section>
     )
 }
