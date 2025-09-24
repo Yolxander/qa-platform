@@ -25,9 +25,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [projects, setProjects] = useState<Project[]>([])
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
+  const [hasRestoredProject, setHasRestoredProject] = useState(false)
 
   const fetchProjects = async () => {
     if (!user) return
+    
+    console.log('Fetching projects for user:', user.id)
     
     try {
       if (!supabase) {
@@ -47,15 +50,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setProjects(data || [])
-      if (data && data.length > 0 && !currentProject) {
-        setCurrentProject(data[0])
-      }
     } catch (error) {
       console.error('Error fetching projects:', error)
     }
   }
 
   useEffect(() => {
+    // Check localStorage on component mount
+    try {
+      const savedProjectId = localStorage.getItem('selectedProjectId')
+      console.log('On component mount - localStorage value:', savedProjectId)
+    } catch (error) {
+      console.warn('Could not access localStorage on mount:', error)
+    }
+
     // Get initial session
     const getInitialSession = async () => {
       const { session } = await auth.getCurrentSession()
@@ -67,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session?.user?.id)
       setUser(session?.user ?? null)
       setLoading(false)
     })
@@ -75,13 +84,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
+    console.log('User effect triggered - user:', user?.id, 'loading:', loading)
     if (user) {
+      setHasRestoredProject(false) // Reset the flag when user changes
       fetchProjects()
-    } else {
+    } else if (user === null && !loading) {
+      // Only clear localStorage when user is explicitly null (not undefined) and not loading
+      console.log('User is null and not loading, clearing localStorage')
       setProjects([])
       setCurrentProject(null)
+      setHasRestoredProject(false)
+      // Clear saved project when user logs out
+      try {
+        localStorage.removeItem('selectedProjectId')
+      } catch (error) {
+        console.warn('Could not clear localStorage:', error)
+      }
     }
-  }, [user])
+  }, [user, loading])
+
+  // Handle localStorage restoration when projects are loaded
+  useEffect(() => {
+    if (projects.length > 0 && !hasRestoredProject) {
+      console.log('Projects loaded, checking localStorage for saved project')
+      console.log('Current project state:', currentProject)
+      console.log('Has restored project:', hasRestoredProject)
+      try {
+        const savedProjectId = localStorage.getItem('selectedProjectId')
+        console.log('Saved project ID from localStorage:', savedProjectId)
+        console.log('Available projects:', projects.map(p => ({ id: p.id, name: p.name })))
+        
+        if (savedProjectId) {
+          console.log('Looking for project with ID:', savedProjectId)
+          console.log('Project IDs in array:', projects.map(p => p.id))
+          const savedProject = projects.find(project => project.id === savedProjectId)
+          console.log('Found saved project:', savedProject)
+          if (savedProject) {
+            console.log('Setting current project to saved project:', savedProject.name)
+            setCurrentProject(savedProject)
+            setHasRestoredProject(true)
+            return
+          } else {
+            console.log('Saved project ID not found in available projects')
+            console.log('Expected ID:', savedProjectId)
+            console.log('Available IDs:', projects.map(p => p.id))
+          }
+        } else {
+          console.log('No saved project ID in localStorage')
+        }
+      } catch (error) {
+        console.warn('Could not access localStorage:', error)
+      }
+      
+      // If no saved project or saved project not found, set the first project
+      console.log('No saved project found, setting to first project:', projects[0].name)
+      setCurrentProject(projects[0])
+      setHasRestoredProject(true)
+    }
+  }, [projects, hasRestoredProject])
 
   const signIn = async (email: string, password: string) => {
     const { error } = await auth.signIn(email, password)
@@ -130,12 +190,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Project created successfully:', data)
       setProjects(prev => [...prev, data])
       if (!currentProject) {
-        setCurrentProject(data)
+        handleSetCurrentProject(data)
       }
       return { error: null, data }
     } catch (error) {
       console.error('Error in createProject:', error)
       return { error: { message: 'Network error' }, data: null }
+    }
+  }
+
+  const handleSetCurrentProject = (project: Project | null) => {
+    console.log('Setting current project to:', project?.name || 'null')
+    setCurrentProject(project)
+    // Save the selected project to localStorage
+    try {
+      if (project) {
+        console.log('Saving project ID to localStorage:', project.id)
+        localStorage.setItem('selectedProjectId', project.id)
+        // Verify the save worked
+        const saved = localStorage.getItem('selectedProjectId')
+        console.log('Verification - saved value:', saved)
+        console.log('Verification - matches expected:', saved === project.id)
+      } else {
+        console.log('Removing project ID from localStorage')
+        localStorage.removeItem('selectedProjectId')
+        // Verify the removal worked
+        const saved = localStorage.getItem('selectedProjectId')
+        console.log('Verification - saved value after removal:', saved)
+      }
+    } catch (error) {
+      console.warn('Could not save to localStorage:', error)
     }
   }
 
@@ -148,7 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signOut,
     createProject,
-    setCurrentProject,
+    setCurrentProject: handleSetCurrentProject,
     fetchProjects
   }
 
