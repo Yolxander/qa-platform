@@ -7,13 +7,14 @@ import {
 } from "@/components/ui/sidebar"
 
 interface VerifyPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function VerifyPage({ params }: VerifyPageProps) {
-  const issueId = parseInt(params.id)
+export default async function VerifyPage({ params }: VerifyPageProps) {
+  const { id } = await params
+  const issueId = parseInt(id)
   
   return (
     <SidebarProvider

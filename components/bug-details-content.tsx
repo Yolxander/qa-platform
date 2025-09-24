@@ -56,91 +56,6 @@ const getEnvironmentBadgeVariant = (environment: string) => {
   }
 }
 
-// Mock bug details data - in a real app, this would be fetched based on bugId
-const mockBugDetails = {
-  id: 1,
-  title: "Login button not responding on mobile",
-  status: "Open" as const,
-  severity: "CRITICAL" as const,
-  environment: "Prod" as const,
-  url: "https://app.example.com/login",
-  stepsToReproduce: "1. Open the mobile app\n2. Navigate to the login screen\n3. Tap the 'Login' button\n4. Observe that nothing happens",
-  expectedResult: "User should be redirected to the dashboard after successful login",
-  actualResult: "Login button appears to be pressed but no action occurs, user remains on login screen",
-  screenshots: [
-    "/api/placeholder/400/300",
-    "/api/placeholder/400/300",
-    "/api/placeholder/400/300"
-  ],
-  linkedPR: "#PR-123",
-  externalTicketId: "JIRA-456",
-  reporter: "Sarah Chen",
-  assignee: "Alex Thompson",
-  createdAt: "2024-01-15T10:30:00Z",
-  updatedAt: "2 hours ago"
-}
-
-const mockComments = [
-  {
-    id: 1,
-    author: "Alex Thompson",
-    timestamp: "2 hours ago",
-    content: "I've reproduced this issue on iOS Safari. The button click event isn't being captured properly. @Sarah Chen can you test on Android as well?",
-    attachments: ["screenshot1.png"]
-  },
-  {
-    id: 2,
-    author: "Sarah Chen",
-    timestamp: "1 hour ago",
-    content: "Confirmed on Android Chrome as well. The issue seems to be with the touch event handler. @Mike Johnson any insights on this?",
-    attachments: []
-  },
-  {
-    id: 3,
-    author: "Mike Johnson",
-    timestamp: "30 minutes ago",
-    content: "Looking into the touch event handling. This might be related to the recent changes in the mobile navigation component.",
-    attachments: []
-  }
-]
-
-const mockActivityLog = [
-  {
-    id: 1,
-    action: "Bug created",
-    user: "Sarah Chen",
-    timestamp: "2024-01-15T10:30:00Z",
-    details: "Bug reported via mobile app"
-  },
-  {
-    id: 2,
-    action: "Assigned",
-    user: "System",
-    timestamp: "2024-01-15T10:35:00Z",
-    details: "Assigned to Alex Thompson"
-  },
-  {
-    id: 3,
-    action: "Status changed",
-    user: "Alex Thompson",
-    timestamp: "2024-01-15T11:00:00Z",
-    details: "Status changed from New to In Progress"
-  },
-  {
-    id: 4,
-    action: "Comment added",
-    user: "Alex Thompson",
-    timestamp: "2 hours ago",
-    details: "Added comment about iOS Safari reproduction"
-  },
-  {
-    id: 5,
-    action: "Comment added",
-    user: "Sarah Chen",
-    timestamp: "1 hour ago",
-    details: "Added comment confirming Android issue"
-  }
-]
 
 interface BugImage {
   id: string
@@ -155,11 +70,66 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
   const [newComment, setNewComment] = React.useState("")
   const [uploadedImages, setUploadedImages] = React.useState<BugImage[]>([])
   const [loadingImages, setLoadingImages] = React.useState(true)
+  const [bug, setBug] = React.useState<any>(null)
+  const [comments, setComments] = React.useState<any[]>([])
+  const [activityLog, setActivityLog] = React.useState<any[]>([])
+  const [loading, setLoading] = React.useState(true)
 
-  // In a real app, fetch bug details based on bugId
-  const bug = mockBugDetails
-  const comments = mockComments
-  const activityLog = mockActivityLog
+  // Fetch bug details from database
+  const fetchBugDetails = async () => {
+    try {
+      setLoading(true)
+      
+      if (!supabase) {
+        console.warn('Supabase not configured')
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('bugs')
+        .select('*')
+        .eq('id', bugId)
+        .single()
+
+      if (error) {
+        console.error('Error fetching bug details:', error)
+        return
+      }
+
+      if (data) {
+        setBug(data)
+      }
+    } catch (error) {
+      console.error('Error fetching bug details:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch comments for this bug
+  const fetchComments = async () => {
+    try {
+      if (!supabase) {
+        console.warn('Supabase not configured')
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('bug_comments')
+        .select('*')
+        .eq('bug_id', bugId)
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching comments:', error)
+        return
+      }
+
+      setComments(data || [])
+    } catch (error) {
+      console.error('Error fetching comments:', error)
+    }
+  }
 
   // Fetch uploaded images for this bug
   const fetchImages = async () => {
@@ -194,6 +164,8 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
   }
 
   React.useEffect(() => {
+    fetchBugDetails()
+    fetchComments()
     fetchImages()
   }, [bugId])
 
@@ -302,6 +274,59 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
     }
   }
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="px-4 lg:px-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/bugs")}
+            className="gap-2"
+          >
+            <IconArrowLeft className="size-4" />
+            Back to Bugs
+          </Button>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading bug details...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state if bug not found
+  if (!bug) {
+    return (
+      <div className="px-4 lg:px-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/bugs")}
+            className="gap-2"
+          >
+            <IconArrowLeft className="size-4" />
+            Back to Bugs
+          </Button>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-2">Bug Not Found</h2>
+            <p className="text-muted-foreground mb-4">The bug you're looking for doesn't exist or has been deleted.</p>
+            <Button onClick={() => router.push("/bugs")}>
+              Return to Bugs
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="px-4 lg:px-6">
       {/* Header */}
@@ -403,11 +428,11 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
               </div>
               <div>
                 <span className="text-muted-foreground">Created:</span>
-                <span className="ml-2 font-medium">{new Date(bug.createdAt).toLocaleDateString()}</span>
+                <span className="ml-2 font-medium">{new Date(bug.created_at).toLocaleDateString()}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Updated:</span>
-                <span className="ml-2 font-medium">{bug.updatedAt}</span>
+                <span className="ml-2 font-medium">{new Date(bug.updated_at).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
@@ -428,33 +453,24 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
           )}
 
           {/* Steps to Reproduce */}
-          {bug.stepsToReproduce && (
+          {bug.steps_to_reproduce && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Steps to Reproduce</h3>
               <div className="text-sm bg-muted p-4 rounded-md">
-                <div className="whitespace-pre-line">{bug.stepsToReproduce}</div>
+                <div className="whitespace-pre-line">{bug.steps_to_reproduce}</div>
               </div>
             </div>
           )}
 
-          {/* Expected vs Actual */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Expected vs Actual</h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-green-600">Expected Result</Label>
-                <div className="text-sm bg-green-50 p-3 rounded-md border border-green-200">
-                  {bug.expectedResult}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-red-600">Actual Result</Label>
-                <div className="text-sm bg-red-50 p-3 rounded-md border border-red-200">
-                  {bug.actualResult}
-                </div>
+          {/* Description */}
+          {bug.description && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Description</h3>
+              <div className="text-sm bg-muted p-4 rounded-md">
+                <div className="whitespace-pre-line">{bug.description}</div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
@@ -499,26 +515,36 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="border-l-2 border-muted pl-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <IconUser className="size-4 text-muted-foreground" />
-                    <span className="font-medium text-sm">{comment.author}</span>
-                    <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
-                  </div>
-                  <div className="text-sm mb-2">
-                    {comment.content}
-                  </div>
-                  {comment.attachments.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <IconPaperclip className="size-3 text-muted-foreground" />
+              {comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment.id} className="border-l-2 border-muted pl-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <IconUser className="size-4 text-muted-foreground" />
+                      <span className="font-medium text-sm">{comment.author || 'Unknown'}</span>
                       <span className="text-xs text-muted-foreground">
-                        {comment.attachments.join(", ")}
+                        {new Date(comment.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                  )}
+                    <div className="text-sm mb-2">
+                      {comment.content}
+                    </div>
+                    {comment.attachments && comment.attachments.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        <IconPaperclip className="size-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          {comment.attachments.join(", ")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <IconMessage className="size-12 mx-auto mb-2" />
+                  <p>No comments yet</p>
+                  <p className="text-sm">Be the first to add a comment!</p>
                 </div>
-              ))}
+              )}
               
               <Separator />
               

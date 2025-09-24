@@ -7,13 +7,14 @@ import {
 } from "@/components/ui/sidebar"
 
 interface BugDetailsPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function BugDetailsPage({ params }: BugDetailsPageProps) {
-  const bugId = parseInt(params.id)
+export default async function BugDetailsPage({ params }: BugDetailsPageProps) {
+  const { id } = await params
+  const bugId = parseInt(id)
   
   return (
     <SidebarProvider
