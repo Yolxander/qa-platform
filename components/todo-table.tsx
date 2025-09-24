@@ -14,6 +14,9 @@ import {
   IconEdit,
   IconTrash,
 } from "@tabler/icons-react"
+import { TimerModal } from "@/components/timer-modal"
+import { EditTodoModal } from "@/components/edit-todo-modal"
+import { DeleteTodoDialog } from "@/components/delete-todo-dialog"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -114,7 +117,11 @@ const getQuickActionIcon = (action: string) => {
   }
 }
 
-const columns: ColumnDef<TodoItem>[] = [
+const createColumns = (
+  onStartTimer: (todo: TodoItem) => void,
+  onEditTodo: (todo: TodoItem) => void,
+  onDeleteTodo: (todo: TodoItem) => void
+): ColumnDef<TodoItem>[] => [
   {
     accessorKey: "title",
     header: "Title / Issue Link",
@@ -191,8 +198,8 @@ const columns: ColumnDef<TodoItem>[] = [
           size="sm"
           variant="outline"
           className="h-8 w-8 p-0"
-          onClick={() => console.log(`Start clicked for ${row.original.title}`)}
-          title="Start"
+          onClick={() => onStartTimer(row.original)}
+          title="Start Timer"
         >
           {getQuickActionIcon(row.original.quickAction)}
         </Button>
@@ -200,7 +207,7 @@ const columns: ColumnDef<TodoItem>[] = [
           size="sm"
           variant="outline"
           className="h-8 w-8 p-0"
-          onClick={() => console.log(`Edit clicked for ${row.original.title}`)}
+          onClick={() => onEditTodo(row.original)}
           title="Edit"
         >
           <IconEdit className="size-4" />
@@ -209,7 +216,7 @@ const columns: ColumnDef<TodoItem>[] = [
           size="sm"
           variant="outline"
           className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-          onClick={() => console.log(`Delete clicked for ${row.original.title}`)}
+          onClick={() => onDeleteTodo(row.original)}
           title="Delete"
         >
           <IconTrash className="size-4" />
@@ -230,6 +237,35 @@ export function TodoTable({ data }: { data: TodoItem[] }) {
     pageIndex: 0,
     pageSize: 10,
   })
+
+  // Modal states
+  const [timerModalOpen, setTimerModalOpen] = React.useState(false)
+  const [editModalOpen, setEditModalOpen] = React.useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
+  const [selectedTodo, setSelectedTodo] = React.useState<TodoItem | null>(null)
+
+  // Modal handlers
+  const handleStartTimer = (todo: TodoItem) => {
+    setSelectedTodo(todo)
+    setTimerModalOpen(true)
+  }
+
+  const handleEditTodo = (todo: TodoItem) => {
+    setSelectedTodo(todo)
+    setEditModalOpen(true)
+  }
+
+  const handleDeleteTodo = (todo: TodoItem) => {
+    setSelectedTodo(todo)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleTodoUpdated = () => {
+    // This will be passed to the parent component to refresh data
+    window.location.reload() // Simple refresh for now
+  }
+
+  const columns = createColumns(handleStartTimer, handleEditTodo, handleDeleteTodo)
 
   const table = useReactTable({
     data,
@@ -450,6 +486,30 @@ export function TodoTable({ data }: { data: TodoItem[] }) {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {selectedTodo && (
+        <>
+          <TimerModal
+            open={timerModalOpen}
+            onOpenChange={setTimerModalOpen}
+            todo={selectedTodo}
+            onTodoUpdated={handleTodoUpdated}
+          />
+          <EditTodoModal
+            open={editModalOpen}
+            onOpenChange={setEditModalOpen}
+            todo={selectedTodo}
+            onTodoUpdated={handleTodoUpdated}
+          />
+          <DeleteTodoDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            todo={selectedTodo}
+            onTodoDeleted={handleTodoUpdated}
+          />
+        </>
+      )}
     </div>
   )
 }
