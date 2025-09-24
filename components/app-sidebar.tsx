@@ -17,6 +17,7 @@ import {
   IconMessageCircle,
   IconActivity,
   IconTools,
+  IconUserPlus,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -304,8 +305,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       currentProject?.id === project.id ? "bg-accent" : ""
                     }`}
                   >
-                    <IconBuilding className="size-4" />
-                    <span>{project.name}</span>
+                    {project.isInvited ? (
+                      <IconUserPlus className="size-4 text-blue-500" />
+                    ) : (
+                      <IconBuilding className="size-4" />
+                    )}
+                    <span className="flex-1">{project.name}</span>
+                    {project.isInvited && (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                        Invited
+                      </span>
+                    )}
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
@@ -345,6 +355,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {data.navWorkflow.map((item) => {
                 const isActive = pathname === item.url
                 const isUnderMaintenance = item.underMaintenance
+                const isInvitedProject = currentProject?.isInvited
+                
+                // Hide "Ready for QA" and "Teams" for invited projects
+                if (isInvitedProject && (item.title === "Ready for QA" || item.title === "Teams")) {
+                  return null
+                }
                 
                 return (
                   <SidebarMenuItem key={item.title}>

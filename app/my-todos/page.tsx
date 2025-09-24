@@ -27,7 +27,7 @@ export default function Page() {
   const [currentView, setCurrentView] = useState<"table" | "kanban">("table");
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
-  const { currentProject } = useAuth();
+  const { currentProject, user } = useAuth();
 
   // Load todos from Supabase
   const loadTodos = async () => {
@@ -46,11 +46,18 @@ export default function Page() {
         return;
       }
 
-      const { data, error } = await supabase
+      // If it's an invited project, only show todos assigned to the current user
+      let query = supabase
         .from('todos')
         .select('*')
-        .eq('project_id', currentProject.id)
-        .order('created_at', { ascending: false });
+        .eq('project_id', currentProject.id);
+
+      if (currentProject.isInvited && user?.email) {
+        // For invited projects, only show todos assigned to the current user
+        query = query.eq('assignee', user.email);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setTodos(data || []);
@@ -108,7 +115,10 @@ export default function Page() {
                   <div>
                     <h1 className="text-2xl font-bold tracking-tight">My Todos</h1>
                     <p className="text-muted-foreground">
-                      Manage your assigned tasks and track progress
+                      {currentProject?.isInvited 
+                        ? `Tasks assigned to you in ${currentProject.name}`
+                        : "Manage your assigned tasks and track progress"
+                      }
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

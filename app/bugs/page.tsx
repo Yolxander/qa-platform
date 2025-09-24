@@ -21,7 +21,7 @@ import bugsData from "./data.json"
 export default function Page() {
   const [bugs, setBugs] = useState<Bug[]>([])
   const [loading, setLoading] = useState(true)
-  const { currentProject } = useAuth()
+  const { currentProject, user } = useAuth()
 
   // Load bugs from Supabase
   const loadBugs = async () => {
@@ -40,11 +40,18 @@ export default function Page() {
         return
       }
 
-      const { data, error } = await supabase
+      // If it's an invited project, only show bugs assigned to the current user
+      let query = supabase
         .from('bugs')
         .select('*')
         .eq('project_id', currentProject.id)
-        .order('created_at', { ascending: false })
+
+      if (currentProject.isInvited && user?.email) {
+        // For invited projects, only show bugs assigned to the current user
+        query = query.eq('assignee', user.email)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       setBugs(data || [])
@@ -97,17 +104,22 @@ export default function Page() {
                   <div>
                     <h1 className="text-2xl font-bold tracking-tight">Bugs</h1>
                     <p className="text-muted-foreground">
-                      Bug reports and issue tracking
+                      {currentProject?.isInvited 
+                        ? `Bugs assigned to you in ${currentProject.name}`
+                        : "Bug reports and issue tracking"
+                      }
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <NewBugForm onBugCreated={handleBugCreated}>
-                      <Button>
-                        <IconPlus className="size-4 mr-2" />
-                        New Bug
-                      </Button>
-                    </NewBugForm>
-                  </div>
+                  {!currentProject?.isInvited && (
+                    <div className="flex items-center gap-2">
+                      <NewBugForm onBugCreated={handleBugCreated}>
+                        <Button>
+                          <IconPlus className="size-4 mr-2" />
+                          New Bug
+                        </Button>
+                      </NewBugForm>
+                    </div>
+                  )}
                 </div>
 
                 {loading ? (

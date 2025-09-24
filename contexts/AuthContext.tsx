@@ -56,18 +56,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Fetching projects for user:', user.id)
     
     try {
-      const { data, error } = await supabase
+      // Get user's own projects
+      const { data: ownedProjects, error: ownedError } = await supabase
         .from('projects')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Error fetching projects:', error)
+      if (ownedError) {
+        console.error('Error fetching owned projects:', ownedError)
         return
       }
 
-      setProjects(data || [])
+      // Get projects where user is a team member (invited projects)
+      const { data: teamProjects, error: teamError } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          teams!inner(
+            team_members!inner(
+              profile_id
+            )
+          )
+        `)
+        .eq('teams.team_members.profile_id', user.id)
+        .neq('user_id', user.id) // Exclude projects owned by the user
+        .order('created_at', { ascending: false })
+
+      if (teamError) {
+        console.error('Error fetching team projects:', teamError)
+        return
+      }
+
+      // Combine and mark invited projects
+      const allProjects = [
+        ...(ownedProjects || []).map(p => ({ ...p, isInvited: false })),
+        ...(teamProjects || []).map(p => ({ ...p, isInvited: true }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      setProjects(allProjects)
     } catch (error) {
       console.error('Error fetching projects:', error)
     }

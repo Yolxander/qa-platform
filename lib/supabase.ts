@@ -44,6 +44,7 @@ export interface Project {
   user_id: string
   created_at: string
   updated_at: string
+  isInvited?: boolean
 }
 
 export interface Todo {
