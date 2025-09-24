@@ -30,9 +30,6 @@ export function SectionCards() {
           <div className="line-clamp-1 flex gap-2 font-medium">
             Trending up this week <IconTrendingUp className="size-4" />
           </div>
-          <div className="text-muted-foreground">
-            Click → /issues?status=OPEN
-          </div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
@@ -51,9 +48,6 @@ export function SectionCards() {
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
             Decreased this week <IconTrendingDown className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Click → /qa
           </div>
         </CardFooter>
       </Card>
@@ -74,9 +68,6 @@ export function SectionCards() {
           <div className="line-clamp-1 flex gap-2 font-medium">
             Mean time to resolve <IconTrendingUp className="size-4" />
           </div>
-          <div className="text-muted-foreground">
-            Tooltip: median too
-          </div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
@@ -95,9 +86,6 @@ export function SectionCards() {
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium text-destructive">
             Requires immediate attention <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Count of severity=CRITICAL
           </div>
         </CardFooter>
       </Card>

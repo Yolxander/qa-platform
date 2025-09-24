@@ -14,23 +14,16 @@ export default function FeaturesSection() {
                         <div className="rotate-x-6 -skew-2">
                             <div className="aspect-88/36 relative">
                                 <Image
-                                    src="/mail-upper.png"
-                                    className="absolute inset-0 z-10"
-                                    alt="payments illustration dark"
+                                    src="/landing_page/dark-mode/todo_quick_actions.png"
+                                    className="absolute inset-0 z-10 hidden dark:block"
+                                    alt="todo quick actions dark"
                                     width={2797}
                                     height={1137}
                                 />
                                 <Image
-                                    src="/mail-back.png"
-                                    className="hidden dark:block"
-                                    alt="payments illustration dark"
-                                    width={2797}
-                                    height={1137}
-                                />
-                                <Image
-                                    src="/mail-back-light.png"
-                                    className="dark:hidden"
-                                    alt="payments illustration light"
+                                    src="/landing_page/light-mode/todo_kanban.png"
+                                    className="absolute inset-0 z-10 dark:hidden"
+                                    alt="todo kanban light"
                                     width={2797}
                                     height={1137}
                                 />

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Logo } from '@/components/logo'
 import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
 import React from 'react'
 import { cn } from '@/lib/utils'
 
@@ -94,14 +95,9 @@ export const HeroHeader = () => {
                                         <span>Sign Up</span>
                                     </Link>
                                 </Button>
-                                <Button
-                                    asChild
-                                    size="sm"
-                                    className={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}>
-                                    <Link href="#">
-                                        <span>Get Started</span>
-                                    </Link>
-                                </Button>
+                                <div className={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}>
+                                    <ThemeToggle />
+                                </div>
                             </div>
                         </div>
                     </div>
