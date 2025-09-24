@@ -10,12 +10,13 @@ import {
   IconChevronsRight,
   IconEye,
   IconEdit,
-  IconMessage,
+  IconPhoto,
   IconExternalLink,
   IconTrash,
 } from "@tabler/icons-react"
 import { EditBugModal } from "@/components/edit-bug-modal"
 import { DeleteBugDialog } from "@/components/delete-bug-dialog"
+import { BugImageUploadModal } from "@/components/bug-image-upload-modal"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -116,6 +117,7 @@ export function BugsTable({ data }: { data: BugItem[] }) {
   // Modal states
   const [editModalOpen, setEditModalOpen] = React.useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
+  const [imageUploadModalOpen, setImageUploadModalOpen] = React.useState(false)
   const [selectedBug, setSelectedBug] = React.useState<BugItem | null>(null)
 
   // Modal handlers
@@ -129,6 +131,11 @@ export function BugsTable({ data }: { data: BugItem[] }) {
     setDeleteDialogOpen(true)
   }
 
+  const handleImageUpload = (bug: BugItem) => {
+    setSelectedBug(bug)
+    setImageUploadModalOpen(true)
+  }
+
   const handleBugUpdated = () => {
     // This will be passed to the parent component to refresh data
     window.location.reload() // Simple refresh for now
@@ -136,7 +143,8 @@ export function BugsTable({ data }: { data: BugItem[] }) {
 
   const createColumns = (
     onEditBug: (bug: BugItem) => void,
-    onDeleteBug: (bug: BugItem) => void
+    onDeleteBug: (bug: BugItem) => void,
+    onImageUpload: (bug: BugItem) => void
   ): ColumnDef<BugItem>[] => [
     {
       accessorKey: "title",
@@ -212,6 +220,15 @@ export function BugsTable({ data }: { data: BugItem[] }) {
             size="sm"
             variant="outline"
             className="h-8 w-8 p-0"
+            onClick={() => onImageUpload(row.original)}
+            title="Upload Images"
+          >
+            <IconPhoto className="size-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
             onClick={() => router.push(`/bug/${row.original.id}`)}
             title="View Details"
           >
@@ -229,15 +246,6 @@ export function BugsTable({ data }: { data: BugItem[] }) {
           <Button
             size="sm"
             variant="outline"
-            className="h-8 w-8 p-0"
-            onClick={() => console.log(`Add comment: ${row.original.title}`)}
-            title="Add Comment"
-          >
-            <IconMessage className="size-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
             onClick={() => onDeleteBug(row.original)}
             title="Delete Bug"
@@ -249,7 +257,7 @@ export function BugsTable({ data }: { data: BugItem[] }) {
     },
   ]
 
-  const columns = createColumns(handleEditBug, handleDeleteBug)
+  const columns = createColumns(handleEditBug, handleDeleteBug, handleImageUpload)
 
   const table = useReactTable({
     data,
@@ -486,6 +494,13 @@ export function BugsTable({ data }: { data: BugItem[] }) {
       {/* Modals */}
       {selectedBug && (
         <>
+          <BugImageUploadModal
+            open={imageUploadModalOpen}
+            onOpenChange={setImageUploadModalOpen}
+            bugId={selectedBug.id}
+            bugTitle={selectedBug.title}
+            onImagesUploaded={handleBugUpdated}
+          />
           <EditBugModal
             open={editModalOpen}
             onOpenChange={setEditModalOpen}

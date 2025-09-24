@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { IconArrowLeft, IconExternalLink, IconMessage, IconPaperclip, IconUser, IconClock } from "@tabler/icons-react"
+import { IconArrowLeft, IconExternalLink, IconMessage, IconPaperclip, IconUser, IconClock, IconPhoto, IconTrash } from "@tabler/icons-react"
+import { supabase } from "@/lib/supabase"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -141,20 +142,130 @@ const mockActivityLog = [
   }
 ]
 
+interface BugImage {
+  id: string
+  url: string
+  name: string
+  size: number
+  created_at: string
+}
+
 export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
   const router = useRouter()
   const [newComment, setNewComment] = React.useState("")
+  const [uploadedImages, setUploadedImages] = React.useState<BugImage[]>([])
+  const [loadingImages, setLoadingImages] = React.useState(true)
 
   // In a real app, fetch bug details based on bugId
   const bug = mockBugDetails
   const comments = mockComments
   const activityLog = mockActivityLog
 
+  // Fetch uploaded images for this bug
+  const fetchImages = async () => {
+    try {
+      setLoadingImages(true)
+      
+      if (!supabase) {
+        console.warn('Supabase not configured')
+        setUploadedImages([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('bug_images')
+        .select('*')
+        .eq('bug_id', bugId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching images:', error)
+        setUploadedImages([])
+      } else {
+        setUploadedImages(data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching images:', error)
+      setUploadedImages([])
+    } finally {
+      setLoadingImages(false)
+    }
+  }
+
+  React.useEffect(() => {
+    fetchImages()
+  }, [bugId])
+
+  // Listen for storage events to refresh images when they're uploaded
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      fetchImages()
+    }
+
+    // Listen for custom events that can be triggered when images are uploaded
+    window.addEventListener('bugImagesUpdated', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('bugImagesUpdated', handleStorageChange)
+    }
+  }, [bugId])
+
   const handleAddComment = () => {
     if (newComment.trim()) {
       console.log("Adding comment:", newComment)
       setNewComment("")
     }
+  }
+
+  const handleDeleteImage = async (imageId: string) => {
+    try {
+      if (!supabase) return
+
+      // Get the full image record from database to get the storage path
+      const { data: imageRecord, error: fetchError } = await supabase
+        .from('bug_images')
+        .select('path')
+        .eq('id', imageId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('bug_images')
+        .delete()
+        .eq('id', imageId)
+
+      if (dbError) throw dbError
+
+      // Delete from storage using the stored path
+      if (imageRecord?.path) {
+        const { error: storageError } = await supabase.storage
+          .from('bug-images')
+          .remove([imageRecord.path])
+
+        if (storageError) {
+          console.warn('Error deleting from storage:', storageError)
+        }
+      }
+
+      // Update local state
+      setUploadedImages(prev => prev.filter(img => img.id !== imageId))
+      
+      // Trigger custom event to refresh images in other components
+      window.dispatchEvent(new CustomEvent('bugImagesUpdated'))
+    } catch (error) {
+      console.error('Error deleting image:', error)
+      alert('Error deleting image. Please try again.')
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
   return (
@@ -233,26 +344,71 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
       {/* Screenshots */}
       <Card>
         <CardHeader>
-          <CardTitle>Screenshots</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <IconPhoto className="size-5" />
+            Screenshots
+            {uploadedImages.length > 0 && (
+              <span className="text-sm font-normal text-muted-foreground">
+                ({uploadedImages.length} image{uploadedImages.length !== 1 ? 's' : ''})
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {bug.screenshots.map((screenshot, index) => (
-              <div key={index} className="relative group cursor-pointer">
-                <img
-                  src={screenshot}
-                  alt={`Screenshot ${index + 1}`}
-                  className="w-full h-48 object-cover rounded-md border hover:opacity-90 transition-opacity"
-                  onClick={() => console.log(`Opening lightbox for screenshot ${index + 1}`)}
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-md flex items-center justify-center">
-                  <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm">
-                    Click to enlarge
-                  </span>
+          {loadingImages ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading images...</div>
+            </div>
+          ) : uploadedImages.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {uploadedImages.map((image) => (
+                <div key={image.id} className="relative group">
+                  <div className="relative">
+                    <img
+                      src={image.url}
+                      alt={image.name}
+                      className="w-full h-48 object-cover rounded-md border hover:opacity-90 transition-opacity cursor-pointer"
+                      onClick={() => window.open(image.url, '_blank')}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-md flex items-center justify-center">
+                      <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm">
+                        Click to view full size
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm('Are you sure you want to delete this image?')) {
+                          handleDeleteImage(image.id)
+                        }
+                      }}
+                    >
+                      <IconTrash className="size-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <div className="text-sm font-medium truncate" title={image.name}>
+                      {image.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatFileSize(image.size)} • {new Date(image.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <IconPhoto className="mx-auto size-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No screenshots uploaded yet</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Upload images from the Bugs page to provide visual context
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
