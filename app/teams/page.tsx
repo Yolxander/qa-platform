@@ -31,12 +31,14 @@ interface Team {
   project_id: string
   created_at: string
   members: TeamMember[]
+  project_name?: string
+  project_description?: string
 }
 
 export default function Page() {
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
-  const { currentProject } = useAuth()
+  const { user, currentProject } = useAuth()
 
   // Load teams and members from Supabase
   const loadTeams = async () => {
@@ -55,10 +57,21 @@ export default function Page() {
         return
       }
 
-      // Load teams for the current project
+      // Load teams for the current project where the current user is a member
       const { data: teamsData, error: teamsError } = await supabase
         .from('teams')
-        .select('*')
+        .select(`
+          *,
+          team_members!inner(
+            profile_id
+          ),
+          projects!inner(
+            id,
+            name,
+            description
+          )
+        `)
+        .eq('team_members.profile_id', user?.id)
         .eq('project_id', currentProject.id)
         .order('created_at', { ascending: false })
 
@@ -96,7 +109,9 @@ export default function Page() {
 
           return {
             ...team,
-            members
+            members,
+            project_name: team.projects.name,
+            project_description: team.projects.description
           }
         })
       )
@@ -111,8 +126,10 @@ export default function Page() {
   }
 
   useEffect(() => {
-    loadTeams()
-  }, [currentProject])
+    if (user && currentProject) {
+      loadTeams()
+    }
+  }, [user, currentProject])
 
   const handleTeamUpdated = () => {
     loadTeams()
@@ -136,9 +153,9 @@ export default function Page() {
               <div className="flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
                 <div className="flex items-center justify-between px-4 lg:px-6">
                   <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Team</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Project Teams</h1>
                     <p className="text-muted-foreground">
-                      Manage your project team members
+                      View teams for {currentProject?.name || 'the current project'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -151,9 +168,18 @@ export default function Page() {
                   </div>
                 </div>
 
-                {loading ? (
+                {!currentProject ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="text-muted-foreground">Loading team...</div>
+                    <div className="text-center">
+                      <div className="text-muted-foreground mb-4">No project selected</div>
+                      <p className="text-sm text-muted-foreground">
+                        Please select a project from the sidebar to view its teams.
+                      </p>
+                    </div>
+                  </div>
+                ) : loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-muted-foreground">Loading teams...</div>
                   </div>
                 ) : (
                   <TeamsTable data={teams} onTeamUpdated={handleTeamUpdated} />

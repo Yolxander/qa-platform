@@ -42,6 +42,8 @@ interface Team {
   project_id: string
   created_at: string
   members: TeamMember[]
+  project_name?: string
+  project_description?: string
 }
 
 interface TeamsTableProps {

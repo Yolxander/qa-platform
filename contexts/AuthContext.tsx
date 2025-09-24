@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { User } from '@supabase/supabase-js'
 import { auth } from '@/lib/auth'
 import { Project, supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
 
 export interface TeamInvitation {
   id: string
@@ -78,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Fetching invitations for user:', user.email)
     
     try {
+      // First, get the basic invitations
       const { data: invitations, error } = await supabase
         .from('team_invitations')
         .select('*')
@@ -90,11 +92,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error fetching invitations:', error)
         return
       }
+
+      if (!invitations || invitations.length === 0) {
+        setInvitations([])
+        setPendingInvitationsCount(0)
+        return
+      }
       
-      setInvitations(invitations || [])
-      setPendingInvitationsCount(invitations?.length || 0)
+      // Enrich each invitation with project and inviter names
+      const enrichedInvitations = await Promise.all(
+        invitations.map(async (invitation) => {
+          let projectName = 'Unknown Project'
+          let inviterName = 'Unknown User'
+
+          try {
+            // Get project name
+            const { data: projectData } = await supabase
+              .from('projects')
+              .select('name')
+              .eq('id', invitation.project_id)
+              .single()
+            projectName = projectData?.name || 'Unknown Project'
+          } catch (projectError) {
+            console.warn('Could not fetch project name:', projectError)
+          }
+
+          try {
+            // Get inviter name
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', invitation.invited_by)
+              .single()
+            inviterName = profileData?.name || 'Unknown User'
+          } catch (profileError) {
+            console.warn('Could not fetch inviter name:', profileError)
+          }
+
+          return {
+            ...invitation,
+            project_name: projectName,
+            inviter_name: inviterName
+          }
+        })
+      )
       
-      console.log('Fetched invitations:', invitations?.length || 0)
+      setInvitations(enrichedInvitations)
+      setPendingInvitationsCount(enrichedInvitations.length)
+      
+      console.log('Fetched invitations:', enrichedInvitations.length)
     } catch (error) {
       console.error('Error fetching invitations:', error)
     }
@@ -150,6 +196,89 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [user, loading])
+
+  // Real-time listener for new invitations
+  useEffect(() => {
+    if (!user || !supabase) return
+
+    const channel = supabase
+      .channel('team_invitations_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'team_invitations',
+          filter: `email=eq.${user.email}`
+        },
+        async (payload) => {
+          console.log('New invitation received:', payload)
+          
+          // Fetch the full invitation details with project and inviter names
+          try {
+            const { data: invitation, error } = await supabase
+              .from('team_invitations')
+              .select('*')
+              .eq('id', payload.new.id)
+              .single()
+
+            if (!error && invitation) {
+              let projectName = 'Unknown Project'
+              let inviterName = 'Unknown User'
+
+              try {
+                // Get project name
+                const { data: projectData } = await supabase
+                  .from('projects')
+                  .select('name')
+                  .eq('id', invitation.project_id)
+                  .single()
+                projectName = projectData?.name || 'Unknown Project'
+              } catch (projectError) {
+                console.warn('Could not fetch project name:', projectError)
+              }
+
+              try {
+                // Get inviter name
+                const { data: profileData } = await supabase
+                  .from('profiles')
+                  .select('name')
+                  .eq('id', invitation.invited_by)
+                  .single()
+                inviterName = profileData?.name || 'Unknown User'
+              } catch (profileError) {
+                console.warn('Could not fetch inviter name:', profileError)
+              }
+
+              // Show toast notification
+              toast.success(
+                `You've been invited by ${inviterName} to join ${projectName}!`,
+                {
+                  description: `Check your notifications to accept or decline.`,
+                  action: {
+                    label: "View Invitations",
+                    onClick: () => {
+                      // Navigate to notifications page
+                      window.location.href = '/notifications'
+                    }
+                  }
+                }
+              )
+              
+              // Refresh the invitations list
+              await fetchInvitations()
+            }
+          } catch (error) {
+            console.error('Error fetching new invitation details:', error)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user, supabase, fetchInvitations])
 
   // Handle localStorage restoration when projects are loaded
   useEffect(() => {
@@ -271,19 +400,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: { message: 'Database not configured' } }
       }
 
-      // Update invitation status to accepted
-      const { error: updateError } = await supabase
+      // First, get the invitation details to get the token
+      const { data: invitation, error: fetchError } = await supabase
         .from('team_invitations')
-        .update({ 
-          status: 'accepted',
-          updated_at: new Date().toISOString()
-        })
+        .select('token, project_id, role')
         .eq('id', invitationId)
         .eq('email', user?.email)
+        .eq('status', 'pending')
+        .single()
 
-      if (updateError) {
-        console.error('Error accepting invitation:', updateError)
-        return { error: { message: 'Failed to accept invitation' } }
+      if (fetchError || !invitation) {
+        console.error('Error fetching invitation:', fetchError)
+        return { error: { message: 'Invitation not found or already processed' } }
+      }
+
+      // Use the database function to properly accept the invitation and add user to team
+      const { error: acceptError } = await supabase.rpc('accept_team_invitation', {
+        invitation_token: invitation.token
+      })
+
+      if (acceptError) {
+        console.error('Error accepting invitation:', acceptError)
+        return { error: { message: 'Failed to accept invitation: ' + acceptError.message } }
       }
 
       // Refresh invitations and projects after accepting
