@@ -11,6 +11,8 @@ import {
   IconCheck,
   IconRotateClockwise,
   IconArrowRight,
+  IconEdit,
+  IconTrash,
 } from "@tabler/icons-react"
 import {
   ColumnDef,
@@ -132,6 +134,16 @@ const columns: ColumnDef<TodoItem>[] = [
     ),
   },
   {
+    accessorKey: "issueLink",
+    header: "Issue Link",
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {row.original.issueLink || "No link"}
+      </span>
+    ),
+    enableHiding: true,
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
@@ -172,24 +184,46 @@ const columns: ColumnDef<TodoItem>[] = [
   },
   {
     accessorKey: "quickAction",
-    header: "Quick Action",
+    header: "Actions",
     cell: ({ row }) => (
-      <Button
-        size="sm"
-        variant="outline"
-        className="h-8 gap-2"
-        onClick={() => console.log(`${row.original.quickAction} clicked for ${row.original.title}`)}
-      >
-        {getQuickActionIcon(row.original.quickAction)}
-        {row.original.quickAction}
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 w-8 p-0"
+          onClick={() => console.log(`Start clicked for ${row.original.title}`)}
+          title="Start"
+        >
+          {getQuickActionIcon(row.original.quickAction)}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 w-8 p-0"
+          onClick={() => console.log(`Edit clicked for ${row.original.title}`)}
+          title="Edit"
+        >
+          <IconEdit className="size-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+          onClick={() => console.log(`Delete clicked for ${row.original.title}`)}
+          title="Delete"
+        >
+          <IconTrash className="size-4" />
+        </Button>
+      </div>
     ),
   },
 ]
 
 export function TodoTable({ data }: { data: TodoItem[] }) {
   const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+    issueLink: false,
+  })
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [pagination, setPagination] = React.useState({
@@ -242,6 +276,24 @@ export function TodoTable({ data }: { data: TodoItem[] }) {
               <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
               <SelectItem value="READY_FOR_QA">Ready for QA</SelectItem>
               <SelectItem value="DONE">Done</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Label htmlFor="issue-filter">Issue:</Label>
+          <Select
+            value={(table.getColumn("issueLink")?.getFilterValue() as string) ?? ""}
+            onValueChange={(value) =>
+              table.getColumn("issueLink")?.setFilterValue(value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="h-8 w-[130px]">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="bug-">Bug linked</SelectItem>
+              <SelectItem value="#">Self-referenced</SelectItem>
+              <SelectItem value="none">No link</SelectItem>
             </SelectContent>
           </Select>
 

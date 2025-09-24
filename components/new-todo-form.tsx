@@ -322,9 +322,9 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {teamMembersLoading ? (
-                    <SelectItem value="" disabled>Loading team members...</SelectItem>
+                    <SelectItem value="loading" disabled>Loading team members...</SelectItem>
                   ) : teamMembers.length === 0 ? (
-                    <SelectItem value="" disabled>No team members found</SelectItem>
+                    <SelectItem value="no-members" disabled>No team members found</SelectItem>
                   ) : (
                     teamMembers.map((member) => (
                       <SelectItem key={member.id} value={member.name}>

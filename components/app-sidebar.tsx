@@ -15,7 +15,7 @@ import {
   IconLock,
   IconRobot,
   IconMessageCircle,
-  IconSettings,
+  IconActivity,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -93,8 +93,8 @@ const data = {
       isPro: true,
     },
     {
-      title: "Maintenance",
-      icon: IconSettings,
+      title: "Monitoring",
+      icon: IconActivity,
       isPro: true,
     },
   ],
