@@ -81,7 +81,6 @@ const data = {
       title: "Teams",
       url: "/teams",
       icon: IconUsersGroup,
-      underMaintenance: true,
     },
   ],
   navPro: [
