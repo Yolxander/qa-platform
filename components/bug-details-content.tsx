@@ -452,22 +452,22 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
             </div>
           )}
 
-          {/* Steps to Reproduce */}
-          {bug.steps_to_reproduce && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Steps to Reproduce</h3>
-              <div className="text-sm bg-muted p-4 rounded-md">
-                <div className="whitespace-pre-line">{bug.steps_to_reproduce}</div>
-              </div>
-            </div>
-          )}
-
           {/* Description */}
           {bug.description && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Description</h3>
               <div className="text-sm bg-muted p-4 rounded-md">
                 <div className="whitespace-pre-line">{bug.description}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Steps to Reproduce */}
+          {bug.steps_to_reproduce && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Steps to Reproduce</h3>
+              <div className="text-sm bg-muted p-4 rounded-md">
+                <div className="whitespace-pre-line">{bug.steps_to_reproduce}</div>
               </div>
             </div>
           )}
