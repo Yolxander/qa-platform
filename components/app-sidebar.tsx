@@ -16,6 +16,7 @@ import {
   IconRobot,
   IconMessageCircle,
   IconActivity,
+  IconTools,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -74,11 +75,13 @@ const data = {
       title: "Ready for QA",
       url: "/ready-for-qa",
       icon: IconChartBar,
+      underMaintenance: true,
     },
     {
       title: "Teams",
       url: "/teams",
       icon: IconUsersGroup,
+      underMaintenance: true,
     },
   ],
   navPro: [
@@ -140,6 +143,41 @@ function ProSubscriptionModal({ isOpen, onClose, featureName }: { isOpen: boolea
               onClose()
             }}>
               Contact Us
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function MaintenanceModal({ isOpen, onClose, featureName }: { isOpen: boolean; onClose: () => void; featureName: string }) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <IconTools className="size-5 text-orange-500" />
+            Under Maintenance
+          </DialogTitle>
+          <DialogDescription>
+            {featureName} is currently under maintenance.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              This page is currently under maintenance. It will be available in a few hours, thank you for your patience.
+            </p>
+            <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+              <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                We're working hard to improve your experience!
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={onClose}>
+              Got it
             </Button>
           </div>
         </div>
@@ -218,6 +256,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [addProjectModalOpen, setAddProjectModalOpen] = React.useState(false)
   const [proModalOpen, setProModalOpen] = React.useState(false)
   const [proFeatureName, setProFeatureName] = React.useState("")
+  const [maintenanceModalOpen, setMaintenanceModalOpen] = React.useState(false)
+  const [maintenanceFeatureName, setMaintenanceFeatureName] = React.useState("")
   
   const handleAddProject = async (projectName: string, description?: string) => {
     const { error, data } = await createProject(projectName, description)
@@ -232,6 +272,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleProFeatureClick = (featureName: string) => {
     setProFeatureName(featureName)
     setProModalOpen(true)
+  }
+
+  const handleMaintenanceFeatureClick = (featureName: string) => {
+    setMaintenanceFeatureName(featureName)
+    setMaintenanceModalOpen(true)
   }
   
   return (
@@ -300,19 +345,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {data.navWorkflow.map((item) => {
                 const isActive = pathname === item.url
+                const isUnderMaintenance = item.underMaintenance
+                
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      tooltip={item.title}
-                      isActive={isActive}
-                      className={isActive ? "bg-accent text-accent-foreground" : ""}
-                      asChild
-                    >
-                      <Link href={item.url}>
+                    {isUnderMaintenance ? (
+                      <SidebarMenuButton 
+                        tooltip={item.title}
+                        onClick={() => handleMaintenanceFeatureClick(item.title)}
+                        className="cursor-pointer hover:bg-accent/50"
+                      >
                         {item.icon && <item.icon />}
                         <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
+                        <IconTools className="ml-auto size-4 text-orange-500" />
+                      </SidebarMenuButton>
+                    ) : (
+                      <SidebarMenuButton 
+                        tooltip={item.title}
+                        isActive={isActive}
+                        className={isActive ? "bg-accent text-accent-foreground" : ""}
+                        asChild
+                      >
+                        <Link href={item.url}>
+                          {item.icon && <item.icon />}
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    )}
                   </SidebarMenuItem>
                 )
               })}
@@ -348,6 +407,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isOpen={proModalOpen} 
         onClose={() => setProModalOpen(false)} 
         featureName={proFeatureName} 
+      />
+      
+      <MaintenanceModal 
+        isOpen={maintenanceModalOpen} 
+        onClose={() => setMaintenanceModalOpen(false)} 
+        featureName={maintenanceFeatureName} 
       />
     </Sidebar>
   )
