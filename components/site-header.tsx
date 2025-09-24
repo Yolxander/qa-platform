@@ -94,7 +94,7 @@ export function SiteHeader() {
         <div className="ml-auto flex items-center gap-2">
           <QuickCreateModal>
             <Button variant="ghost" size="sm" className="hidden sm:flex dark:text-foreground">
-              Quick Create
+              Quick Action
             </Button>
           </QuickCreateModal>
           <ThemeToggle />
