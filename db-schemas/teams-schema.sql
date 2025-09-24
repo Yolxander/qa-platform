@@ -141,10 +141,19 @@ CREATE TRIGGER create_default_team_for_project_trigger
 -- Function to add project owner as team owner
 CREATE OR REPLACE FUNCTION public.add_project_owner_to_team()
 RETURNS TRIGGER AS $$
+DECLARE
+  owner_profile_id UUID;
 BEGIN
-  -- Add the project owner as team owner
-  INSERT INTO public.team_members (team_id, profile_id, role)
-  VALUES (NEW.id, NEW.created_by, 'owner');
+  -- Get the profile_id for the user
+  SELECT id INTO owner_profile_id 
+  FROM public.profiles 
+  WHERE id = NEW.created_by;
+  
+  -- Only insert if profile exists
+  IF owner_profile_id IS NOT NULL THEN
+    INSERT INTO public.team_members (team_id, profile_id, role)
+    VALUES (NEW.id, owner_profile_id, 'owner');
+  END IF;
   
   RETURN NEW;
 END;

@@ -12,7 +12,10 @@ import {
   IconEdit,
   IconMessage,
   IconExternalLink,
+  IconTrash,
 } from "@tabler/icons-react"
+import { EditBugModal } from "@/components/edit-bug-modal"
+import { DeleteBugDialog } from "@/components/delete-bug-dialog"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -110,7 +113,31 @@ export function BugsTable({ data }: { data: BugItem[] }) {
     pageSize: 10,
   })
 
-  const columns: ColumnDef<BugItem>[] = [
+  // Modal states
+  const [editModalOpen, setEditModalOpen] = React.useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
+  const [selectedBug, setSelectedBug] = React.useState<BugItem | null>(null)
+
+  // Modal handlers
+  const handleEditBug = (bug: BugItem) => {
+    setSelectedBug(bug)
+    setEditModalOpen(true)
+  }
+
+  const handleDeleteBug = (bug: BugItem) => {
+    setSelectedBug(bug)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleBugUpdated = () => {
+    // This will be passed to the parent component to refresh data
+    window.location.reload() // Simple refresh for now
+  }
+
+  const createColumns = (
+    onEditBug: (bug: BugItem) => void,
+    onDeleteBug: (bug: BugItem) => void
+  ): ColumnDef<BugItem>[] => [
     {
       accessorKey: "title",
       header: "Title",
@@ -180,32 +207,49 @@ export function BugsTable({ data }: { data: BugItem[] }) {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <div className="flex gap-1">
+        <div className="flex items-center gap-2">
           <Button
-            variant="outline"
             size="sm"
-            onClick={() => console.log(`Quick view: ${row.original.title}`)}
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={() => router.push(`/bug/${row.original.id}`)}
+            title="View Details"
           >
             <IconEye className="size-4" />
           </Button>
           <Button
-            variant="outline"
             size="sm"
-            onClick={() => console.log(`Change status: ${row.original.title}`)}
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={() => onEditBug(row.original)}
+            title="Edit Bug"
           >
             <IconEdit className="size-4" />
           </Button>
           <Button
-            variant="outline"
             size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
             onClick={() => console.log(`Add comment: ${row.original.title}`)}
+            title="Add Comment"
           >
             <IconMessage className="size-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+            onClick={() => onDeleteBug(row.original)}
+            title="Delete Bug"
+          >
+            <IconTrash className="size-4" />
           </Button>
         </div>
       ),
     },
   ]
+
+  const columns = createColumns(handleEditBug, handleDeleteBug)
 
   const table = useReactTable({
     data,
@@ -438,6 +482,24 @@ export function BugsTable({ data }: { data: BugItem[] }) {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {selectedBug && (
+        <>
+          <EditBugModal
+            open={editModalOpen}
+            onOpenChange={setEditModalOpen}
+            bug={selectedBug}
+            onBugUpdated={handleBugUpdated}
+          />
+          <DeleteBugDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            bug={selectedBug}
+            onBugDeleted={handleBugUpdated}
+          />
+        </>
+      )}
     </div>
   )
 }

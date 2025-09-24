@@ -61,6 +61,11 @@ const data = {
   ],
   navWorkflow: [
     {
+      title: "Bugs",
+      url: "/bugs",
+      icon: IconUsers,
+    },
+    {
       title: "My Todos",
       url: "/my-todos",
       icon: IconListDetails,
@@ -69,11 +74,6 @@ const data = {
       title: "Ready for QA",
       url: "/ready-for-qa",
       icon: IconChartBar,
-    },
-    {
-      title: "Bugs",
-      url: "/bugs",
-      icon: IconUsers,
     },
     {
       title: "Teams",

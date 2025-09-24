@@ -115,7 +115,9 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {children}
+        <div onClick={() => setOpen(true)}>
+          {children}
+        </div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>

@@ -29,6 +29,7 @@ import {
 import { NewTodoForm } from "@/components/new-todo-form"
 import { QuickAddForm } from "@/components/quick-add-form"
 import { AssignTasksForm } from "@/components/assign-tasks-form"
+import { NewBugForm } from "@/components/new-bug-form"
 
 interface QuickActionOption {
   title: string
@@ -75,6 +76,7 @@ const getPageActions = (pathname: string): QuickActionOption[] => {
           description: "Shortcut to report form",
           icon: IconBug,
           action: () => console.log("New Bug clicked"),
+          component: NewBugForm,
         },
         {
           title: "Bulk Actions",
@@ -246,9 +248,10 @@ interface QuickCreateModalProps {
   children: React.ReactNode
   onTodoCreated?: () => void
   onTasksAssigned?: () => void
+  onBugCreated?: () => void
 }
 
-export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned }: QuickCreateModalProps) {
+export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned, onBugCreated }: QuickCreateModalProps) {
   const [open, setOpen] = React.useState(false)
   const pathname = usePathname()
   const quickActionOptions = getPageActions(pathname)
@@ -330,6 +333,7 @@ export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned }: Q
                   key={option.title}
                   onTodoCreated={onTodoCreated}
                   onTasksAssigned={onTasksAssigned}
+                  onBugCreated={onBugCreated || (() => window.location.reload())}
                 >
                   <Button
                     variant="outline"

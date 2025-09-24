@@ -6,8 +6,6 @@ import { BugsTable } from "@/components/bugs-table"
 import { SiteHeader } from "@/components/site-header"
 import { ProtectedRoute } from "@/components/protected-route"
 import { NewBugForm } from "@/components/new-bug-form"
-import { BulkBugActionsForm } from "@/components/bulk-bug-actions-form"
-import { QuickCreateModal } from "@/components/quick-create-modal"
 import { Button } from "@/components/ui/button"
 import { IconPlus } from "@tabler/icons-react"
 import {
@@ -67,10 +65,6 @@ export default function Page() {
     loadBugs()
   }
 
-  const handleBugsUpdated = () => {
-    loadBugs()
-  }
-
   // Convert Supabase bugs to the format expected by BugsTable
   const formattedBugs = bugs.map(bug => ({
     id: bug.id,
@@ -113,16 +107,6 @@ export default function Page() {
                         New Bug
                       </Button>
                     </NewBugForm>
-                    <BulkBugActionsForm onBugsUpdated={handleBugsUpdated}>
-                      <Button variant="outline">
-                        Bulk Actions
-                      </Button>
-                    </BulkBugActionsForm>
-                    <QuickCreateModal>
-                      <Button variant="outline">
-                        More Actions
-                      </Button>
-                    </QuickCreateModal>
                   </div>
                 </div>
 

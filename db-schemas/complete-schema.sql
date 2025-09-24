@@ -399,6 +399,54 @@ CREATE TRIGGER set_default_project_for_todo_trigger
   BEFORE INSERT ON public.todos
   FOR EACH ROW EXECUTE FUNCTION public.set_default_project_for_todo();
 
+-- Function to automatically create a team when a project is created
+CREATE OR REPLACE FUNCTION public.create_default_team_for_project()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Create a default team for the new project
+  INSERT INTO public.teams (name, description, project_id, created_by)
+  VALUES (
+    NEW.name || ' Team',
+    'Default team for ' || NEW.name,
+    NEW.id,
+    NEW.user_id
+  );
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger to automatically create team when project is created
+CREATE TRIGGER create_default_team_for_project_trigger
+  AFTER INSERT ON public.projects
+  FOR EACH ROW EXECUTE FUNCTION public.create_default_team_for_project();
+
+-- Function to add project owner as team owner
+CREATE OR REPLACE FUNCTION public.add_project_owner_to_team()
+RETURNS TRIGGER AS $$
+DECLARE
+  owner_profile_id UUID;
+BEGIN
+  -- Get the profile_id for the user
+  SELECT id INTO owner_profile_id 
+  FROM public.profiles 
+  WHERE id = NEW.created_by;
+  
+  -- Only insert if profile exists
+  IF owner_profile_id IS NOT NULL THEN
+    INSERT INTO public.team_members (team_id, profile_id, role)
+    VALUES (NEW.id, owner_profile_id, 'owner');
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger to add project owner to team
+CREATE TRIGGER add_project_owner_to_team_trigger
+  AFTER INSERT ON public.teams
+  FOR EACH ROW EXECUTE FUNCTION public.add_project_owner_to_team();
+
 -- =============================================
 -- 7. PERMISSIONS
 -- =============================================
@@ -409,6 +457,8 @@ GRANT ALL ON public.profiles TO authenticated;
 GRANT ALL ON public.projects TO authenticated;
 GRANT ALL ON public.bugs TO authenticated;
 GRANT ALL ON public.todos TO authenticated;
+GRANT ALL ON public.teams TO authenticated;
+GRANT ALL ON public.team_members TO authenticated;
 
 -- =============================================
 -- 8. COMMENTS
