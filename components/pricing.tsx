@@ -5,11 +5,11 @@ import { Check } from 'lucide-react'
 
 export default function Pricing() {
     return (
-        <section >
+        <section id="pricing">
             <div className="mx-auto max-w-6xl px-6">
                 <div className="mx-auto max-w-2xl space-y-6 text-center">
-                    <h1 className="text-center text-4xl font-semibold lg:text-5xl">Pricing that Scales with You</h1>
-                    <p>Gemini is evolving to be more than just the models. It supports an entire to the APIs and platforms helping developers and businesses innovate.</p>
+                    <h1 className="text-center text-4xl font-semibold lg:text-5xl">Pricing that Scales with Your Team</h1>
+                    <p>Choose the perfect plan for your development team. From individual developers to large organizations, we have the right solution for your project management needs.</p>
                 </div>
 
                 <div className="mt-8 grid gap-6 md:mt-20 md:grid-cols-3">
@@ -24,7 +24,7 @@ export default function Pricing() {
                                 asChild
                                 variant="outline"
                                 className="mt-4 w-full">
-                                <Link href="">Get Started</Link>
+                                <Link href="/dashboard">Get Started</Link>
                             </Button>
                         </CardHeader>
 
@@ -32,7 +32,7 @@ export default function Pricing() {
                             <hr className="border-dashed" />
 
                             <ul className="list-outside space-y-3 text-sm">
-                                {['Basic Analytics Dashboard', '5GB Cloud Storage', 'Email and Chat Support'].map((item, index) => (
+                                {['Basic Bug Tracking', 'Task Management', 'Email Support'].map((item, index) => (
                                     <li
                                         key={index}
                                         className="flex items-center gap-2">
@@ -57,7 +57,7 @@ export default function Pricing() {
                             <Button
                                 asChild
                                 className="mt-4 w-full">
-                                <Link href="">Get Started</Link>
+                                <Link href="">Coming Soon</Link>
                             </Button>
                         </CardHeader>
 
@@ -65,7 +65,7 @@ export default function Pricing() {
                             <hr className="border-dashed" />
 
                             <ul className="list-outside space-y-3 text-sm">
-                                {['Everything in Free Plan', '5GB Cloud Storage', 'Email and Chat Support', 'Access to Community Forum', 'Single User Access', 'Access to Basic Templates', 'Mobile App Access', '1 Custom Report Per Month', 'Monthly Product Updates', 'Standard Security Features'].map((item, index) => (
+                                {['Everything in Free Plan', 'Advanced Analytics', 'Team Collaboration', 'QA Workflow Management', 'Priority Support', 'Custom Integrations', 'Advanced Reporting', 'Environment Management', 'Team Dashboard', 'API Access'].map((item, index) => (
                                     <li
                                         key={index}
                                         className="flex items-center gap-2">
@@ -89,7 +89,7 @@ export default function Pricing() {
                                 asChild
                                 variant="outline"
                                 className="mt-4 w-full">
-                                <Link href="">Get Started</Link>
+                                <Link href="">Coming Soon</Link>
                             </Button>
                         </CardHeader>
 
@@ -97,7 +97,7 @@ export default function Pricing() {
                             <hr className="border-dashed" />
 
                             <ul className="list-outside space-y-3 text-sm">
-                                {['Everything in Pro Plan', '5GB Cloud Storage', 'Email and Chat Support'].map((item, index) => (
+                                {['Everything in Pro Plan', 'Enterprise Security', 'Dedicated Support'].map((item, index) => (
                                     <li
                                         key={index}
                                         className="flex items-center gap-2">

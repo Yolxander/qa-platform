@@ -4,18 +4,18 @@ import Link from 'next/link'
 
 export default function IntegrationsSection() {
     return (
-        <section>
+        <section id="integrations">
             <div className="bg-muted dark:bg-background py-24 md:py-32">
                 <div className="mx-auto flex flex-col px-6 md:grid md:max-w-5xl md:grid-cols-2 md:gap-12">
                     <div className="order-last mt-6 flex flex-col gap-12 md:order-first">
                         <div className="space-y-6">
-                            <h2 className="text-balance text-3xl font-semibold md:text-4xl lg:text-5xl">Integrate with your favorite LLMs</h2>
-                            <p className="text-muted-foreground">Connect seamlessly with popular platforms and services to enhance your workflow.</p>
+                            <h2 className="text-balance text-3xl font-semibold md:text-4xl lg:text-5xl">Integrate with your development tools</h2>
+                            <p className="text-muted-foreground">Connect seamlessly with popular development platforms and services to enhance your project management workflow.</p>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 asChild>
-                                <Link href="#">Get Started</Link>
+                                <Link href="/dashboard">Get Started</Link>
                             </Button>
                         </div>
 
@@ -24,10 +24,10 @@ export default function IntegrationsSection() {
                                 <MediaWiki className="size-9" />
                             </div>
                             <blockquote>
-                                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.</p>
+                                <p>"This platform has transformed how we manage our development workflow. The bug tracking and task management features are exactly what our team needed."</p>
                                 <div className="mt-2 flex gap-2 text-sm">
-                                    <cite>John Doe</cite>
-                                    <p className="text-muted-foreground">Founder, MediaWiki</p>
+                                    <cite>Sarah Chen</cite>
+                                    <p className="text-muted-foreground">Lead Developer, TechCorp</p>
                                 </div>
                             </blockquote>
                         </div>
@@ -38,33 +38,33 @@ export default function IntegrationsSection() {
                             <div className="grid grid-cols-2 gap-2">
                                 <Integration
                                     icon={<Gemini />}
-                                    name="Gemini"
-                                    description="The AI model that powers Google's search engine."
+                                    name="GitHub"
+                                    description="Seamless integration with GitHub for issue tracking and code management."
                                 />
                                 <Integration
                                     icon={<Replit />}
-                                    name="Replit"
-                                    description="The AI model that powers Google's search engine."
+                                    name="Jira"
+                                    description="Connect with Jira for advanced project management and workflow automation."
                                 />
                                 <Integration
                                     icon={<GooglePaLM />}
-                                    name="GooglePaLM"
-                                    description="The AI model that powers Google's search engine."
+                                    name="Slack"
+                                    description="Real-time notifications and team communication integration."
                                 />
                                 <Integration
                                     icon={<MagicUI />}
-                                    name="MagicUI"
-                                    description="The AI model that powers Google's search engine."
+                                    name="VS Code"
+                                    description="Direct integration with VS Code for streamlined development workflow."
                                 />
                                 <Integration
                                     icon={<VSCodium />}
-                                    name="VSCodium"
-                                    description="The AI model that powers Google's search engine."
+                                    name="Docker"
+                                    description="Environment management and container deployment tracking."
                                 />
                                 <Integration
                                     icon={<MediaWiki />}
-                                    name="MediaWiki"
-                                    description="The AI model that powers Google's search engine."
+                                    name="Jenkins"
+                                    description="CI/CD pipeline integration for automated testing and deployment."
                                 />
                             </div>
                         </div>
