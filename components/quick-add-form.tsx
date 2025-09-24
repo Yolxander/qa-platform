@@ -42,7 +42,7 @@ interface TodoItem {
 export function QuickAddForm({ children, onTodosCreated }: QuickAddFormProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { user } = useAuth()
+  const { user, currentProject } = useAuth()
 
   const [todos, setTodos] = useState<TodoItem[]>([
     {
@@ -117,15 +117,28 @@ export function QuickAddForm({ children, onTodosCreated }: QuickAddFormProps) {
         assignee: todo.assignee,
         due_date: todo.due_date,
         quick_action: "Start",
-        user_id: user.id
+        user_id: user.id,
+        project_id: currentProject?.id || null
       }))
 
-      const { error } = await supabase
+      const { data: insertedTodos, error } = await supabase
         .from('todos')
         .insert(todosToInsert)
+        .select()
 
       if (error) {
         throw error
+      }
+
+      // Auto-populate issue links with the created todo IDs
+      if (insertedTodos) {
+        const updatePromises = insertedTodos.map(todo => 
+          supabase
+            .from('todos')
+            .update({ issue_link: `#${todo.id}` })
+            .eq('id', todo.id)
+        )
+        await Promise.all(updatePromises)
       }
 
       toast.success(`${validTodos.length} todos created successfully!`)

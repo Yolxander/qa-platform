@@ -56,7 +56,7 @@ export function AssignTasksForm({ children, onTasksAssigned }: AssignTasksFormPr
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [bulkAssignee, setBulkAssignee] = useState("")
-  const { user } = useAuth()
+  const { user, currentProject } = useAuth()
 
   // Load todos and team members when dialog opens
   useEffect(() => {
@@ -68,9 +68,15 @@ export function AssignTasksForm({ children, onTasksAssigned }: AssignTasksFormPr
 
   const loadTodos = async () => {
     try {
+      if (!currentProject) {
+        setTodos([])
+        return
+      }
+
       const { data, error } = await supabase
         .from('todos')
         .select('*')
+        .eq('project_id', currentProject.id)
         .order('created_at', { ascending: false })
 
       if (error) throw error

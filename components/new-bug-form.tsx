@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -22,33 +23,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { IconPlus, IconLoader2 } from "@tabler/icons-react"
+import { IconBug, IconLoader2 } from "@tabler/icons-react"
 import { toast } from "sonner"
 
-interface NewTodoFormProps {
+interface NewBugFormProps {
   children: React.ReactNode
-  onTodoCreated?: () => void
+  onBugCreated?: () => void
 }
 
-export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
+export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const { user, currentProject } = useAuth()
 
   const [formData, setFormData] = useState({
     title: "",
-    issue_link: "",
+    description: "",
     severity: "MEDIUM" as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
     environment: "Dev" as "Prod" | "Stage" | "Dev",
-    assignee: "",
-    due_date: "Today"
+    reporter: "",
+    assignee: ""
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) {
-      toast.error("You must be logged in to create a todo")
+      toast.error("You must be logged in to report a bug")
+      return
+    }
+
+    if (!currentProject) {
+      toast.error("Please select a project first")
       return
     }
 
@@ -59,18 +64,17 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
 
     setLoading(true)
     try {
-      const { data: insertedTodo, error } = await supabase
-        .from('todos')
+      const { data: insertedBug, error } = await supabase
+        .from('bugs')
         .insert({
           title: formData.title,
-          issue_link: formData.issue_link || null,
+          description: formData.description,
           severity: formData.severity,
           environment: formData.environment,
-          assignee: formData.assignee,
-          due_date: formData.due_date,
-          quick_action: "Start",
+          reporter: formData.reporter,
+          assignee: formData.assignee || "Unassigned",
           user_id: user.id,
-          project_id: currentProject?.id || null
+          project_id: currentProject.id
         })
         .select()
         .single()
@@ -79,31 +83,23 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
         throw error
       }
 
-      // Auto-populate issue link with the created todo ID
-      if (insertedTodo && !formData.issue_link) {
-        await supabase
-          .from('todos')
-          .update({ issue_link: `#${insertedTodo.id}` })
-          .eq('id', insertedTodo.id)
-      }
-
-      toast.success("Todo created successfully!")
+      toast.success("Bug reported successfully!")
       setOpen(false)
       setFormData({
         title: "",
-        issue_link: "",
+        description: "",
         severity: "MEDIUM",
         environment: "Dev",
-        assignee: "",
-        due_date: "Today"
+        reporter: "",
+        assignee: ""
       })
       
-      if (onTodoCreated) {
-        onTodoCreated()
+      if (onBugCreated) {
+        onBugCreated()
       }
     } catch (error) {
-      console.error("Error creating todo:", error)
-      toast.error("Failed to create todo. Please check your Supabase configuration.")
+      console.error("Error reporting bug:", error)
+      toast.error("Failed to report bug. Please check your Supabase configuration.")
     } finally {
       setLoading(false)
     }
@@ -124,11 +120,11 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <IconPlus className="size-5" />
-            New Todo
+            <IconBug className="size-5" />
+            Report New Bug
           </DialogTitle>
           <DialogDescription>
-            Create a new task to track and manage.
+            Report a bug or issue for the current project.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -136,7 +132,7 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
             <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
-              placeholder="Enter todo title"
+              placeholder="Brief description of the bug"
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
               required
@@ -144,12 +140,13 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="issue_link">Issue Link</Label>
-            <Input
-              id="issue_link"
-              placeholder="#1234 or URL"
-              value={formData.issue_link}
-              onChange={(e) => handleInputChange("issue_link", e.target.value)}
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Detailed description of the bug, steps to reproduce, expected vs actual behavior"
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              rows={4}
             />
           </div>
 
@@ -192,32 +189,24 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee *</Label>
+              <Label htmlFor="reporter">Reporter *</Label>
               <Input
-                id="assignee"
-                placeholder="Team member name"
-                value={formData.assignee}
-                onChange={(e) => handleInputChange("assignee", e.target.value)}
+                id="reporter"
+                placeholder="Your name"
+                value={formData.reporter}
+                onChange={(e) => handleInputChange("reporter", e.target.value)}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="due_date">Due Date *</Label>
-              <Select
-                value={formData.due_date}
-                onValueChange={(value) => handleInputChange("due_date", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Today">Today</SelectItem>
-                  <SelectItem value="Tomorrow">Tomorrow</SelectItem>
-                  <SelectItem value="3d left">3 days left</SelectItem>
-                  <SelectItem value="1w left">1 week left</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="assignee">Assignee</Label>
+              <Input
+                id="assignee"
+                placeholder="Team member name (optional)"
+                value={formData.assignee}
+                onChange={(e) => handleInputChange("assignee", e.target.value)}
+              />
             </div>
           </div>
 
@@ -232,7 +221,7 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-              Create Todo
+              Report Bug
             </Button>
           </div>
         </form>

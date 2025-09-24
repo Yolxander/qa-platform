@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/sidebar"
 import { supabase } from "@/lib/supabase"
 import { Todo } from "@/lib/supabase"
+import { useAuth } from "@/contexts/AuthContext"
 
 import todoData from "./data.json"
 
@@ -26,6 +27,7 @@ export default function Page() {
   const [currentView, setCurrentView] = useState<"table" | "kanban">("table");
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currentProject } = useAuth();
 
   // Load todos from Supabase
   const loadTodos = async () => {
@@ -38,9 +40,16 @@ export default function Page() {
         return;
       }
 
+      if (!currentProject) {
+        console.warn("No current project selected");
+        setTodos([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('todos')
         .select('*')
+        .eq('project_id', currentProject.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -56,7 +65,7 @@ export default function Page() {
 
   useEffect(() => {
     loadTodos();
-  }, []);
+  }, [currentProject]);
 
   const handleTodoCreated = () => {
     loadTodos();

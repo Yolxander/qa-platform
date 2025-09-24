@@ -77,18 +77,6 @@ const getPageActions = (pathname: string): QuickActionOption[] => {
           action: () => console.log("New Bug clicked"),
         },
         {
-          title: "Export CSV",
-          description: "Export current filtered view to CSV",
-          icon: IconFileExport,
-          action: () => console.log("Export CSV clicked"),
-        },
-        {
-          title: "Export PDF",
-          description: "Export current filtered view to PDF",
-          icon: IconDownload,
-          action: () => console.log("Export PDF clicked"),
-        },
-        {
           title: "Bulk Actions",
           description: "Assign, change status, add label",
           icon: IconSettings,
