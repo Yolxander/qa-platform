@@ -4,6 +4,10 @@ import { supabase } from '@/lib/supabase'
 // GET /api/bugs - Get all bugs
 export async function GET() {
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+    }
+
     const { data, error } = await supabase
       .from('bugs')
       .select('*')
@@ -22,6 +26,10 @@ export async function GET() {
 // POST /api/bugs - Create a new bug
 export async function POST(request: NextRequest) {
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+    }
+
     const body = await request.json()
     const { data: { user } } = await supabase.auth.getUser()
 

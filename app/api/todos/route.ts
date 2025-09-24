@@ -4,6 +4,10 @@ import { supabase } from '@/lib/supabase'
 // GET /api/todos - Get all todos
 export async function GET() {
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+    }
+
     const { data, error } = await supabase
       .from('todos')
       .select('*')
@@ -22,6 +26,10 @@ export async function GET() {
 // POST /api/todos - Create a new todo
 export async function POST(request: NextRequest) {
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+    }
+
     const body = await request.json()
     const { data: { user } } = await supabase.auth.getUser()
 
