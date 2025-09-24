@@ -34,6 +34,14 @@ This folder contains all the database schema files for the Smasher Light applica
 - Automatic project assignment for new bugs
 - Performance indexes
 
+### `create-teams-table.sql`
+**Teams table creation** - Creates teams and team_members tables with:
+- Teams table connected to projects
+- Team members junction table with roles (developer, tester, guest)
+- RLS policies for secure access control
+- Automatic team creation when projects are created
+- Performance indexes and triggers
+
 ## Database Structure
 
 ### Tables

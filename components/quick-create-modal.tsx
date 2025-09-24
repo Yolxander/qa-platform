@@ -84,6 +84,22 @@ const getPageActions = (pathname: string): QuickActionOption[] => {
         },
       ]
     
+    case "/teams":
+      return [
+        {
+          title: "Add Member",
+          description: "Add a new team member",
+          icon: IconUser,
+          action: () => console.log("Add Member clicked"),
+        },
+        {
+          title: "Edit Team",
+          description: "Update team information",
+          icon: IconSettings,
+          action: () => console.log("Edit Team clicked"),
+        },
+      ]
+    
     case "/my-todos":
       return [
         {
@@ -248,6 +264,8 @@ export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned }: Q
         return "Dashboard Actions"
       case "/bugs":
         return "Bug Actions"
+      case "/teams":
+        return "Team Actions"
       case "/my-todos":
         return "Todo Actions"
       case "/ready-for-qa":
@@ -269,6 +287,8 @@ export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned }: Q
         return "Choose an action to manage your dashboard and projects."
       case "/bugs":
         return "Select an action to work with bug reports and issues."
+      case "/teams":
+        return "Choose an action to manage your project team."
       case "/my-todos":
         return "Choose an action to manage your tasks and todos."
       case "/ready-for-qa":

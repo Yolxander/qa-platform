@@ -59,6 +59,27 @@ CREATE TABLE IF NOT EXISTS public.todos (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create teams table
+CREATE TABLE IF NOT EXISTS public.teams (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
+  created_by UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create team_members junction table
+CREATE TABLE IF NOT EXISTS public.team_members (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  team_id UUID REFERENCES public.teams(id) ON DELETE CASCADE NOT NULL,
+  profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  role TEXT DEFAULT 'developer' CHECK (role IN ('developer', 'tester', 'guest')),
+  joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(team_id, profile_id)
+);
+
 -- =============================================
 -- 2. INDEXES FOR PERFORMANCE
 -- =============================================
@@ -69,6 +90,10 @@ CREATE INDEX IF NOT EXISTS idx_todos_project_id ON public.todos(project_id);
 CREATE INDEX IF NOT EXISTS idx_bugs_user_id ON public.bugs(user_id);
 CREATE INDEX IF NOT EXISTS idx_todos_user_id ON public.todos(user_id);
 CREATE INDEX IF NOT EXISTS idx_projects_user_id ON public.projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_teams_project_id ON public.teams(project_id);
+CREATE INDEX IF NOT EXISTS idx_teams_created_by ON public.teams(created_by);
+CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON public.team_members(team_id);
+CREATE INDEX IF NOT EXISTS idx_team_members_profile_id ON public.team_members(profile_id);
 
 -- =============================================
 -- 3. ROW LEVEL SECURITY
@@ -79,6 +104,8 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bugs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.todos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
 
 -- =============================================
 -- 4. RLS POLICIES
@@ -198,6 +225,85 @@ CREATE POLICY "Users can delete own todos" ON public.todos
         WHERE projects.id = todos.project_id 
         AND projects.user_id = auth.uid()
       )
+    )
+  );
+
+-- Teams policies
+CREATE POLICY "Users can view teams in their projects" ON public.teams
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.projects 
+      WHERE projects.id = teams.project_id 
+      AND projects.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can create teams in their projects" ON public.teams
+  FOR INSERT WITH CHECK (
+    auth.uid() = created_by AND
+    EXISTS (
+      SELECT 1 FROM public.projects 
+      WHERE projects.id = project_id 
+      AND projects.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can update teams in their projects" ON public.teams
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.projects 
+      WHERE projects.id = teams.project_id 
+      AND projects.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can delete teams in their projects" ON public.teams
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM public.projects 
+      WHERE projects.id = teams.project_id 
+      AND projects.user_id = auth.uid()
+    )
+  );
+
+-- Team members policies
+CREATE POLICY "Users can view team members in their project teams" ON public.team_members
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.teams 
+      JOIN public.projects ON projects.id = teams.project_id
+      WHERE teams.id = team_members.team_id 
+      AND projects.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can add team members to their project teams" ON public.team_members
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.teams 
+      JOIN public.projects ON projects.id = teams.project_id
+      WHERE teams.id = team_members.team_id 
+      AND projects.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can update team members in their project teams" ON public.team_members
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.teams 
+      JOIN public.projects ON projects.id = teams.project_id
+      WHERE teams.id = team_members.team_id 
+      AND projects.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can remove team members from their project teams" ON public.team_members
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM public.teams 
+      JOIN public.projects ON projects.id = teams.project_id
+      WHERE teams.id = team_members.team_id 
+      AND projects.user_id = auth.uid()
     )
   );
 

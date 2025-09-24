@@ -38,11 +38,20 @@ interface BugItem {
   status: string
 }
 
+interface TeamMember {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
 export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [bugs, setBugs] = useState<BugItem[]>([])
   const [bugsLoading, setBugsLoading] = useState(false)
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [teamMembersLoading, setTeamMembersLoading] = useState(false)
   const { user, currentProject } = useAuth()
 
   const [formData, setFormData] = useState({
@@ -54,10 +63,11 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
     due_date: "Today"
   })
 
-  // Load open bugs when dialog opens
+  // Load open bugs and team members when dialog opens
   useEffect(() => {
     if (open && currentProject) {
       loadOpenBugs()
+      loadTeamMembers()
     }
   }, [open, currentProject])
 
@@ -84,6 +94,46 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
       setBugs([])
     } finally {
       setBugsLoading(false)
+    }
+  }
+
+  const loadTeamMembers = async () => {
+    try {
+      setTeamMembersLoading(true)
+      
+      if (!supabase || !currentProject) {
+        setTeamMembers([])
+        return
+      }
+
+      // Get team members for the current project
+      const { data, error } = await supabase
+        .from('team_members')
+        .select(`
+          profiles!inner(
+            id,
+            name,
+            email
+          )
+        `)
+        .eq('teams.project_id', currentProject.id)
+        .order('profiles.name')
+
+      if (error) throw error
+
+      const members = (data || []).map(member => ({
+        id: member.profiles.id,
+        name: member.profiles.name || 'Unknown',
+        email: member.profiles.email,
+        role: 'member' // Default role for display
+      }))
+
+      setTeamMembers(members)
+    } catch (error) {
+      console.error("Error loading team members:", error)
+      setTeamMembers([])
+    } finally {
+      setTeamMembersLoading(false)
     }
   }
 
@@ -263,13 +313,32 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="assignee">Assignee *</Label>
-              <Input
-                id="assignee"
-                placeholder="Team member name"
+              <Select
                 value={formData.assignee}
-                onChange={(e) => handleInputChange("assignee", e.target.value)}
-                required
-              />
+                onValueChange={(value) => handleInputChange("assignee", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teamMembersLoading ? (
+                    <SelectItem value="" disabled>Loading team members...</SelectItem>
+                  ) : teamMembers.length === 0 ? (
+                    <SelectItem value="" disabled>No team members found</SelectItem>
+                  ) : (
+                    teamMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.name}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{member.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {member.email}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

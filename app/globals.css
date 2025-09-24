@@ -140,7 +140,7 @@
   --accent: oklch(0.8022 0.1420 87.5709);
   --accent-foreground: oklch(0.2136 0.0190 93.3762);
   --destructive: oklch(0.3958 0.1331 25.7230);
-  --border: oklch(0.8022 0.1420 87.5709);
+  --border: #7d5b00;
   --input: oklch(0.2739 0.0055 286.0326);
   --ring: oklch(0.7665 0.1387 91.0594);
   --chart-1: oklch(0.7665 0.1387 91.0594);

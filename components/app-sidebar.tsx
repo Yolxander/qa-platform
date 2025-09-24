@@ -10,6 +10,7 @@ import {
   IconUsers,
   IconChevronDown,
   IconBuilding,
+  IconUsersGroup,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -64,6 +65,11 @@ const data = {
       title: "Bugs",
       url: "/bugs",
       icon: IconUsers,
+    },
+    {
+      title: "Teams",
+      url: "/teams",
+      icon: IconUsersGroup,
     },
   ],
   projects: [
