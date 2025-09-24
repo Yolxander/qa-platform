@@ -17,6 +17,8 @@ import {
   IconRotateClockwise,
   IconArrowRight,
 } from "@tabler/icons-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 interface TodoItem {
   id: number;
@@ -84,13 +86,57 @@ export function TodoKanban({ data }: { data: TodoItem[] }) {
       column: item.status, // Map status to column
     }))
   );
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleDataChange = (newData: TodoItem[]) => {
+  const handleDataChange = async (newData: TodoItem[]) => {
+    // Find the item that was moved by comparing with previous state
+    const movedItem = newData.find((newItem) => {
+      const oldItem = todos.find((old) => old.id === newItem.id);
+      return oldItem && oldItem.column !== newItem.column;
+    });
+
+    if (movedItem) {
+      setIsUpdating(true);
+      // Update the database with the new status
+      await updateTodoStatus(movedItem.id, movedItem.column);
+      setIsUpdating(false);
+    }
+
     setTodos(newData);
+  };
+
+  const updateTodoStatus = async (todoId: number, newStatus: string) => {
+    if (!supabase) {
+      toast.error("Database not configured");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .update({ status: newStatus })
+        .eq('id', todoId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success(`Todo moved to ${newStatus}`);
+    } catch (error) {
+      console.error("Error updating todo status:", error);
+      toast.error("Failed to update todo status");
+      // Revert the change on error
+      setTodos(todos);
+    }
   };
 
   return (
     <div className="w-full space-y-4 px-4 lg:px-6">
+      {isUpdating && (
+        <div className="flex items-center justify-center py-2">
+          <div className="text-sm text-muted-foreground">Updating todo status...</div>
+        </div>
+      )}
       <KanbanProvider
         columns={columns}
         data={todos}
