@@ -164,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!supabase) {
         console.error('Supabase not configured')
-        return { error: { message: 'Database not configured' }, data: null }
+        return { error: { message: 'Database not configured. Please check your environment variables.' }, data: null }
       }
 
       if (!user) {
@@ -172,6 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: { message: 'User not authenticated' }, data: null }
       }
 
+      console.log('Attempting to insert project into database...')
       const { data, error } = await supabase
         .from('projects')
         .insert({
@@ -183,8 +184,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (error) {
-        console.error('Error creating project:', error)
-        return { error: { message: error.message }, data: null }
+        console.error('Supabase error creating project:', error)
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
+        
+        // Provide more specific error messages
+        let errorMessage = error.message
+        if (error.code === 'PGRST116') {
+          errorMessage = 'Projects table does not exist. Please run the database schema setup.'
+        } else if (error.code === '42501') {
+          errorMessage = 'Permission denied. Please check your database permissions.'
+        } else if (error.message.includes('relation "projects" does not exist')) {
+          errorMessage = 'Projects table not found. Please run the complete database schema.'
+        }
+        
+        return { error: { message: errorMessage }, data: null }
       }
 
       console.log('Project created successfully:', data)
@@ -194,8 +212,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return { error: null, data }
     } catch (error) {
-      console.error('Error in createProject:', error)
-      return { error: { message: 'Network error' }, data: null }
+      console.error('Network error in createProject:', error)
+      return { error: { message: 'Network error. Please check your connection and try again.' }, data: null }
     }
   }
 

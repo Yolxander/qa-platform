@@ -62,7 +62,24 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating project:', error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      
+      // Provide more specific error messages
+      let errorMessage = error.message
+      if (error.code === 'PGRST116') {
+        errorMessage = 'Projects table does not exist. Please run the database schema setup.'
+      } else if (error.code === '42501') {
+        errorMessage = 'Permission denied. Please check your database permissions.'
+      } else if (error.message.includes('relation "projects" does not exist')) {
+        errorMessage = 'Projects table not found. Please run the complete database schema.'
+      }
+      
+      return NextResponse.json({ error: errorMessage }, { status: 400 })
     }
 
     return NextResponse.json(data)
