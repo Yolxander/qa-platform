@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
@@ -31,9 +31,18 @@ interface NewTodoFormProps {
   onTodoCreated?: () => void
 }
 
+interface BugItem {
+  id: number
+  title: string
+  severity: string
+  status: string
+}
+
 export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [bugs, setBugs] = useState<BugItem[]>([])
+  const [bugsLoading, setBugsLoading] = useState(false)
   const { user, currentProject } = useAuth()
 
   const [formData, setFormData] = useState({
@@ -44,6 +53,39 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
     assignee: "",
     due_date: "Today"
   })
+
+  // Load open bugs when dialog opens
+  useEffect(() => {
+    if (open && currentProject) {
+      loadOpenBugs()
+    }
+  }, [open, currentProject])
+
+  const loadOpenBugs = async () => {
+    try {
+      setBugsLoading(true)
+      
+      if (!supabase || !currentProject) {
+        setBugs([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('bugs')
+        .select('id, title, severity, status')
+        .eq('project_id', currentProject.id)
+        .in('status', ['Open', 'In Progress'])
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setBugs(data || [])
+    } catch (error) {
+      console.error("Error loading bugs:", error)
+      setBugs([])
+    } finally {
+      setBugsLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,11 +101,18 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
 
     setLoading(true)
     try {
+      // Process issue link - if it's a bug link, extract the bug ID
+      let issueLink = null
+      if (formData.issue_link && formData.issue_link.startsWith('bug-')) {
+        const bugId = formData.issue_link.replace('bug-', '')
+        issueLink = `bug-${bugId}`
+      }
+
       const { data: insertedTodo, error } = await supabase
         .from('todos')
         .insert({
           title: formData.title,
-          issue_link: formData.issue_link || null,
+          issue_link: issueLink,
           severity: formData.severity,
           environment: formData.environment,
           assignee: formData.assignee,
@@ -79,8 +128,8 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
         throw error
       }
 
-      // Auto-populate issue link with the created todo ID
-      if (insertedTodo && !formData.issue_link) {
+      // Auto-populate issue link with the created todo ID if no bug was linked
+      if (insertedTodo && !issueLink) {
         await supabase
           .from('todos')
           .update({ issue_link: `#${insertedTodo.id}` })
@@ -144,13 +193,34 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="issue_link">Issue Link</Label>
-            <Input
-              id="issue_link"
-              placeholder="#1234 or URL"
-              value={formData.issue_link}
-              onChange={(e) => handleInputChange("issue_link", e.target.value)}
-            />
+            <Label htmlFor="issue_link">Link to Bug (Optional)</Label>
+            <Select
+              value={formData.issue_link || "none"}
+              onValueChange={(value) => handleInputChange("issue_link", value === "none" ? "" : value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a bug to link to" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No bug linked</SelectItem>
+                {bugsLoading ? (
+                  <SelectItem value="loading" disabled>Loading bugs...</SelectItem>
+                ) : bugs.length === 0 ? (
+                  <SelectItem value="no-bugs" disabled>No open bugs found</SelectItem>
+                ) : (
+                  bugs.map((bug) => (
+                    <SelectItem key={bug.id} value={`bug-${bug.id}`}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{bug.title}</span>
+                        <span className="text-xs text-muted-foreground">
+                          #{bug.id} • {bug.severity} • {bug.status}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

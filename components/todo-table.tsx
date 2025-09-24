@@ -120,7 +120,10 @@ const columns: ColumnDef<TodoItem>[] = [
       <div className="flex flex-col">
         <span className="font-medium">{row.original.title}</span>
         <a 
-          href={`/bug/${row.original.id}`}
+          href={row.original.issueLink.startsWith('bug-') 
+            ? `/bug/${row.original.issueLink.replace('bug-', '')}` 
+            : `/bug/${row.original.id}`
+          }
           className="text-sm text-primary hover:underline"
         >
           {row.original.issueLink}

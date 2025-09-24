@@ -52,8 +52,8 @@ export function BulkBugActionsForm({ children, onBugsUpdated }: BulkBugActionsFo
   const [statusFilter, setStatusFilter] = useState("all")
   const [severityFilter, setSeverityFilter] = useState("all")
   const [bulkAssignee, setBulkAssignee] = useState("")
-  const [bulkStatus, setBulkStatus] = useState("")
-  const [bulkSeverity, setBulkSeverity] = useState("")
+  const [bulkStatus, setBulkStatus] = useState("no-change")
+  const [bulkSeverity, setBulkSeverity] = useState("no-change")
   const { user, currentProject } = useAuth()
 
   // Load bugs when dialog opens
@@ -115,7 +115,7 @@ export function BulkBugActionsForm({ children, onBugsUpdated }: BulkBugActionsFo
       return
     }
 
-    if (!bulkAssignee && !bulkStatus && !bulkSeverity) {
+    if (!bulkAssignee && (!bulkStatus || bulkStatus === "no-change") && (!bulkSeverity || bulkSeverity === "no-change")) {
       toast.error("Please specify at least one field to update")
       return
     }
@@ -124,8 +124,8 @@ export function BulkBugActionsForm({ children, onBugsUpdated }: BulkBugActionsFo
     try {
       const updateData: any = {}
       if (bulkAssignee) updateData.assignee = bulkAssignee
-      if (bulkStatus) updateData.status = bulkStatus
-      if (bulkSeverity) updateData.severity = bulkSeverity
+      if (bulkStatus && bulkStatus !== "no-change") updateData.status = bulkStatus
+      if (bulkSeverity && bulkSeverity !== "no-change") updateData.severity = bulkSeverity
 
       const { error } = await supabase
         .from('bugs')
@@ -242,7 +242,7 @@ export function BulkBugActionsForm({ children, onBugsUpdated }: BulkBugActionsFo
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No change</SelectItem>
+                    <SelectItem value="no-change">No change</SelectItem>
                     <SelectItem value="Open">Open</SelectItem>
                     <SelectItem value="In Progress">In Progress</SelectItem>
                     <SelectItem value="Ready for QA">Ready for QA</SelectItem>
@@ -258,7 +258,7 @@ export function BulkBugActionsForm({ children, onBugsUpdated }: BulkBugActionsFo
                     <SelectValue placeholder="Select severity" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No change</SelectItem>
+                    <SelectItem value="no-change">No change</SelectItem>
                     <SelectItem value="CRITICAL">Critical</SelectItem>
                     <SelectItem value="HIGH">High</SelectItem>
                     <SelectItem value="MEDIUM">Medium</SelectItem>
