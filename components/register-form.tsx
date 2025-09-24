@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/AuthContext"
+import { auth } from "@/lib/auth"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -39,12 +40,24 @@ export function RegisterForm({
       return
     }
 
-    const { error } = await signUp(email, password, name)
-    
-    if (error) {
-      setError(error.message)
-    } else {
-      router.push("/dashboard")
+    try {
+      const { error, data } = await signUp(email, password, name)
+      
+      if (error) {
+        setError(error.message)
+      } else if (data?.user) {
+        // Ensure profile is created (backup method)
+        try {
+          await auth.createProfile(data.user.id, email, name)
+        } catch (profileError) {
+          console.warn("Profile creation backup failed, but user was created:", profileError)
+          // Don't show error to user as the trigger should have created the profile
+        }
+        
+        router.push("/dashboard")
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.")
     }
     
     setLoading(false)

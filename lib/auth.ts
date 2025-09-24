@@ -16,7 +16,8 @@ export const auth = {
       password,
       options: {
         data: {
-          name: name || email.split('@')[0]
+          name: name || email.split('@')[0],
+          full_name: name || email.split('@')[0]
         }
       }
     })
@@ -68,6 +69,29 @@ export const auth = {
     const { data, error } = await supabase.auth.updateUser({
       password
     })
+    return { data, error }
+  },
+
+  // Create or update user profile (backup method)
+  async createProfile(userId: string, email: string, name?: string, avatarUrl?: string) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        email,
+        name: name || email.split('@')[0],
+        avatar_url: avatarUrl
+      })
+    return { data, error }
+  },
+
+  // Get user profile
+  async getProfile(userId?: string) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId || (await this.getCurrentUser()).user?.id)
+      .single()
     return { data, error }
   }
 }

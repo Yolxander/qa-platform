@@ -107,14 +107,6 @@ export default function Page() {
                       currentView={currentView} 
                       onViewChange={setCurrentView} 
                     />
-                    <QuickCreateModal 
-                      onTodoCreated={handleTodoCreated}
-                      onTasksAssigned={handleTasksAssigned}
-                    >
-                      <Button size="sm">
-                        <IconPlus className="size-4" />
-                      </Button>
-                    </QuickCreateModal>
                   </div>
                 </div>
 
