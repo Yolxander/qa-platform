@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { IconArrowLeft, IconExternalLink, IconMessage, IconPaperclip, IconUser, IconClock, IconPhoto, IconTrash } from "@tabler/icons-react"
 import { supabase } from "@/lib/supabase"
+import { BugImageUploadModal } from "@/components/bug-image-upload-modal"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -74,6 +75,7 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
   const [comments, setComments] = React.useState<any[]>([])
   const [activityLog, setActivityLog] = React.useState<any[]>([])
   const [loading, setLoading] = React.useState(true)
+  const [showUploadModal, setShowUploadModal] = React.useState(false)
 
   // Fetch bug details from database
   const fetchBugDetails = async () => {
@@ -431,12 +433,6 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Badge variant={getSeverityBadgeVariant(bug.severity)}>
-                  {bug.severity}
-                </Badge>
-                <Badge variant={getStatusBadgeVariant(bug.status)}>
-                  {bug.status}
-                </Badge>
                 <Badge variant={getEnvironmentBadgeVariant(bug.environment)}>
                   {bug.environment}
                 </Badge>
@@ -517,25 +513,21 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
               <IconMessage className="size-4 mr-2" />
               Add Comment
             </Button>
-            <Button variant="outline" className="flex-1">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => setShowUploadModal(true)}
+            >
               <IconPhoto className="size-4 mr-2" />
               Add Screenshot
             </Button>
           </div>
 
-          {/* Guarantees/Policies */}
-          <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-            <div className="text-center">
-              <div className="text-sm font-medium">Priority</div>
-              <div className="text-xs text-muted-foreground">{bug.severity}</div>
-            </div>
+          {/* Environment Info */}
+          <div className="grid grid-cols-1 gap-4 pt-4 border-t">
             <div className="text-center">
               <div className="text-sm font-medium">Environment</div>
               <div className="text-xs text-muted-foreground">{bug.environment}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm font-medium">Status</div>
-              <div className="text-xs text-muted-foreground">{bug.status}</div>
             </div>
           </div>
         </div>
@@ -605,6 +597,18 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Image Upload Modal */}
+      <BugImageUploadModal
+        open={showUploadModal}
+        onOpenChange={setShowUploadModal}
+        bugId={bugId}
+        bugTitle={bug?.title || 'Bug'}
+        onImagesUploaded={() => {
+          fetchImages()
+          setShowUploadModal(false)
+        }}
+      />
     </div>
   )
 }
