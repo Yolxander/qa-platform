@@ -100,39 +100,60 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
         return
       }
 
-      // Get all profiles that are not already in the project's team
-      // Using a safer approach with proper joins
-      const { data, error } = await supabase
+      // Get all profiles first
+      const { data: allProfiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id, 
-          name, 
-          email, 
-          avatar_url,
-          team_members!left(
-            team_id,
-            teams!inner(project_id)
-          )
-        `)
-        .not('team_members.teams.project_id', 'eq', currentProject.id)
+        .select('id, name, email, avatar_url')
         .order('name')
+        .limit(50) // Limit to prevent performance issues
 
-      if (error) {
-        console.error("Error loading profiles:", error)
-        // If the complex query fails, try a simpler approach
-        const { data: simpleData, error: simpleError } = await supabase
-          .from('profiles')
-          .select('id, name, email, avatar_url')
-          .order('name')
-          .limit(50) // Limit to prevent performance issues
-        
-        if (simpleError) throw simpleError
-        setProfiles(simpleData || [])
-      } else {
-        setProfiles(data || [])
+      if (profilesError) {
+        setProfiles([])
+        return
       }
+
+      if (!allProfiles || allProfiles.length === 0) {
+        setProfiles([])
+        return
+      }
+
+      // Get team IDs for this project first
+      const { data: projectTeams, error: teamsError } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('project_id', currentProject.id)
+
+      if (teamsError) {
+        setProfiles(allProfiles)
+        return
+      }
+
+      if (!projectTeams || projectTeams.length === 0) {
+        // No teams in this project, so all profiles are available
+        setProfiles(allProfiles)
+        return
+      }
+
+      // Get existing team members for these teams
+      const { data: existingMembers, error: membersError } = await supabase
+        .from('team_members')
+        .select('user_id')
+        .in('team_id', projectTeams.map(team => team.id))
+
+      if (membersError) {
+        // If we can't get existing members, just show all profiles
+        setProfiles(allProfiles)
+        return
+      }
+
+      // Filter out profiles that are already team members
+      const existingMemberIds = new Set(existingMembers?.map(member => member.user_id) || [])
+      const availableProfiles = allProfiles.filter(profile => 
+        !existingMemberIds.has(profile.id)
+      )
+
+      setProfiles(availableProfiles)
     } catch (error) {
-      console.error("Error loading profiles:", error)
       setProfiles([])
     } finally {
       setProfilesLoading(false)
@@ -156,13 +177,11 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
         .order('name')
 
       if (error) {
-        console.error("Error loading teams:", error)
         setTeams([])
       } else {
         setTeams(data || [])
       }
     } catch (error) {
-      console.error("Error loading teams:", error)
       setTeams([])
     } finally {
       setTeamsLoading(false)
@@ -211,7 +230,6 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
       const errors = results.filter(result => result.error)
       if (errors.length > 0) {
         const firstError = errors[0].error
-        console.error("Error creating team invitations:", firstError)
         if (firstError.message.includes('already exists') || firstError.message.includes('duplicate')) {
           toast.error("An invitation for this email already exists for one or more of the selected teams")
         } else if (firstError.message.includes('Access denied')) {
@@ -223,6 +241,13 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
         }
         return
       }
+
+      // Debug: Log successful invitation creation
+      console.log("🎉 Team invitations created successfully:", results.map(result => ({
+        success: result.data?.success,
+        invitation_id: result.data?.invitation_id,
+        message: result.data?.message
+      })))
 
       // Get team names for success message
       const teamNames = teams
@@ -246,7 +271,6 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
         onTeamUpdated()
       }
     } catch (error) {
-      console.error("Error adding team member:", error)
       toast.error("Failed to add team member. Please check your Supabase configuration.")
     } finally {
       setLoading(false)

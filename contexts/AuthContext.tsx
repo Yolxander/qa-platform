@@ -188,13 +188,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           let inviterName = 'Unknown User'
 
           try {
-            // Get project name
-            const { data: projectData } = await supabase
-              .from('projects')
-              .select('name')
-              .eq('id', invitation.project_id)
-              .single()
-            projectName = projectData?.name || 'Unknown Project'
+            // Get project name only if project_id exists
+            if (invitation.project_id) {
+              const { data: projectData } = await supabase
+                .from('projects')
+                .select('name')
+                .eq('id', invitation.project_id)
+                .single()
+              projectName = projectData?.name || 'Unknown Project'
+            } else {
+              projectName = 'Unknown Project'
+            }
           } catch (projectError) {
             console.warn('Could not fetch project name:', projectError)
           }
@@ -307,13 +311,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               let inviterName = 'Unknown User'
 
               try {
-                // Get project name
-                const { data: projectData } = await supabase
-                  .from('projects')
-                  .select('name')
-                  .eq('id', invitation.project_id)
-                  .single()
-                projectName = projectData?.name || 'Unknown Project'
+                // Get project name only if project_id exists
+                if (invitation.project_id) {
+                  const { data: projectData } = await supabase
+                    .from('projects')
+                    .select('name')
+                    .eq('id', invitation.project_id)
+                    .single()
+                  projectName = projectData?.name || 'Unknown Project'
+                } else {
+                  projectName = 'Unknown Project'
+                }
               } catch (projectError) {
                 console.warn('Could not fetch project name:', projectError)
               }
