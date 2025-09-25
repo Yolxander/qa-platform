@@ -6,6 +6,7 @@ import { TeamsTable } from "@/components/teams-table"
 import { SiteHeader } from "@/components/site-header"
 import { ProtectedRoute } from "@/components/protected-route"
 import { AddTeamMemberForm } from "@/components/add-team-member-form"
+import { NewTeamForm } from "@/components/new-team-form"
 import { Button } from "@/components/ui/button"
 import { IconPlus } from "@tabler/icons-react"
 import {
@@ -57,21 +58,17 @@ export default function Page() {
         return
       }
 
-      // Load teams for the current project where the current user is a member
+      // Load all teams for the current project
       const { data: teamsData, error: teamsError } = await supabase
         .from('teams')
         .select(`
           *,
-          team_members!inner(
-            profile_id
-          ),
           projects!inner(
             id,
             name,
             description
           )
         `)
-        .eq('team_members.profile_id', user?.id)
         .eq('project_id', currentProject.id)
         .order('created_at', { ascending: false })
 
@@ -159,6 +156,12 @@ export default function Page() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <NewTeamForm onTeamCreated={handleTeamUpdated}>
+                      <Button variant="outline">
+                        <IconPlus className="size-4 mr-2" />
+                        Create Team
+                      </Button>
+                    </NewTeamForm>
                     <AddTeamMemberForm onTeamUpdated={handleTeamUpdated}>
                       <Button>
                         <IconPlus className="size-4 mr-2" />

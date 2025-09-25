@@ -30,6 +30,7 @@ import { NewTodoForm } from "@/components/new-todo-form"
 import { QuickAddForm } from "@/components/quick-add-form"
 import { AssignTasksForm } from "@/components/assign-tasks-form"
 import { NewBugForm } from "@/components/new-bug-form"
+import { NewTeamForm } from "@/components/new-team-form"
 
 interface QuickActionOption {
   title: string
@@ -88,6 +89,13 @@ const getPageActions = (pathname: string): QuickActionOption[] => {
     
     case "/teams":
       return [
+        {
+          title: "Create Team",
+          description: "Create a new team for the project",
+          icon: IconUsers,
+          action: () => console.log("Create Team clicked"),
+          component: NewTeamForm,
+        },
         {
           title: "Add Member",
           description: "Add a new team member",
@@ -249,9 +257,10 @@ interface QuickCreateModalProps {
   onTodoCreated?: () => void
   onTasksAssigned?: () => void
   onBugCreated?: () => void
+  onTeamCreated?: () => void
 }
 
-export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned, onBugCreated }: QuickCreateModalProps) {
+export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned, onBugCreated, onTeamCreated }: QuickCreateModalProps) {
   const [open, setOpen] = React.useState(false)
   const pathname = usePathname()
   const quickActionOptions = getPageActions(pathname)
@@ -334,6 +343,7 @@ export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned, onB
                   onTodoCreated={onTodoCreated}
                   onTasksAssigned={onTasksAssigned}
                   onBugCreated={onBugCreated || (() => window.location.reload())}
+                  onTeamCreated={onTeamCreated}
                 >
                   <Button
                     variant="outline"

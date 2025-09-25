@@ -6,7 +6,8 @@ import { ProtectedRoute } from '@/components/protected-route'
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { InvitationsTable } from '@/components/invitations-table'
-import { IconUser } from '@tabler/icons-react'
+import { Button } from '@/components/ui/button'
+import { IconUser, IconRefresh } from '@tabler/icons-react'
 import {
   SidebarInset,
   SidebarProvider,
@@ -14,7 +15,7 @@ import {
 
 
 function NotificationsPage() {
-  const { user, invitations, acceptInvitation, declineInvitation, fetchInvitations } = useAuth()
+  const { user, invitations, acceptInvitation, declineInvitation, fetchInvitations, refreshData } = useAuth()
 
   useEffect(() => {
     if (user) {
@@ -35,6 +36,14 @@ function NotificationsPage() {
           Manage your team invitations and notifications
         </p>
         </div>
+        <Button 
+          variant="outline" 
+          onClick={refreshData}
+          className="flex items-center gap-2"
+        >
+          <IconRefresh className="size-4" />
+          Refresh
+        </Button>
       </div>
 
       <div className="px-4 lg:px-6">

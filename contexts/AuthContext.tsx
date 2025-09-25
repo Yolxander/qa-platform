@@ -53,8 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProjects = useCallback(async () => {
     if (!user || !supabase) return
     
-    console.log('Fetching projects for user:', user.id)
-    
     try {
       // Get user's own projects
       const { data: ownedProjects, error: ownedError } = await supabase
@@ -68,30 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      // Get projects where user is a team member (invited projects)
-      const { data: teamProjects, error: teamError } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          teams!inner(
-            team_members!inner(
-              profile_id
-            )
-          )
-        `)
-        .eq('teams.team_members.profile_id', user.id)
-        .neq('user_id', user.id) // Exclude projects owned by the user
-        .order('created_at', { ascending: false })
+      // Get invited projects using a completely separate approach
+      const invitedProjects = await fetchInvitedProjects()
 
-      if (teamError) {
-        console.error('Error fetching team projects:', teamError)
-        return
-      }
-
-      // Combine and mark invited projects
+      // Combine and mark projects
       const allProjects = [
         ...(ownedProjects || []).map(p => ({ ...p, isInvited: false })),
-        ...(teamProjects || []).map(p => ({ ...p, isInvited: true }))
+        ...(invitedProjects.map(p => ({ ...p, isInvited: true })))
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
       setProjects(allProjects)
@@ -100,10 +81,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, supabase])
 
+  // Separate function to get invited projects using team memberships
+  const fetchInvitedProjects = useCallback(async () => {
+    if (!user || !supabase) return []
+
+    console.log('Fetching invited projects for user:', user.id)
+
+    try {
+      // Step 1: Get all team memberships for this user
+      const { data: teamMemberships, error: membershipsError } = await supabase
+        .from('team_members')
+        .select(`
+          team_id,
+          teams!inner(
+            project_id,
+            projects!inner(
+              id,
+              name,
+              description,
+              user_id,
+              created_at,
+              updated_at
+            )
+          )
+        `)
+        .eq('profile_id', user.id)
+
+      if (membershipsError) {
+        console.error('Error fetching team memberships:', membershipsError)
+        return []
+      }
+
+      console.log('Team memberships found:', teamMemberships?.length || 0)
+
+      if (!teamMemberships || teamMemberships.length === 0) {
+        console.log('No team memberships found')
+        return []
+      }
+
+      // Step 2: Extract projects from memberships and filter out owned projects
+      const invitedProjects = teamMemberships
+        .map(membership => membership.teams.projects)
+        .filter(project => {
+          console.log('Checking project:', project.name, 'owner:', project.user_id, 'current user:', user.id)
+          return project.user_id !== user.id // Exclude projects owned by user
+        })
+
+      console.log('Invited projects after filtering:', invitedProjects.length)
+      console.log('Invited projects data:', invitedProjects)
+
+      return invitedProjects
+    } catch (error) {
+      console.error('Error fetching invited projects:', error)
+      return []
+    }
+  }, [user, supabase])
+
   const fetchInvitations = useCallback(async () => {
     if (!user || !supabase) return
-    
-    console.log('Fetching invitations for user:', user.email)
     
     try {
       // First, get the basic invitations
@@ -166,8 +201,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setInvitations(enrichedInvitations)
       setPendingInvitationsCount(enrichedInvitations.length)
-      
-      console.log('Fetched invitations:', enrichedInvitations.length)
     } catch (error) {
       console.error('Error fetching invitations:', error)
     }
