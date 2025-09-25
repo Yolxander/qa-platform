@@ -168,7 +168,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('email', user.email)
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
+
+      console.log('Fetched invitations:', invitations?.length || 0, 'pending invitations')
 
       if (error) {
         console.error('Error fetching invitations:', error)
@@ -545,7 +546,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: { message: 'Failed to accept invitation: ' + acceptError.message } }
       }
 
+      console.log('Invitation accepted successfully, refreshing data...')
+
       // Refresh invitations and projects after accepting
+      // Add a small delay to ensure database has processed the update
+      await new Promise(resolve => setTimeout(resolve, 500))
       await fetchInvitations()
       await fetchProjects()
       
