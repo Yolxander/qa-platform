@@ -81,53 +81,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, supabase])
 
-  // Separate function to get invited projects using team memberships
+  // Separate function to get invited projects using database function
   const fetchInvitedProjects = useCallback(async () => {
     if (!user || !supabase) return []
 
     console.log('Fetching invited projects for user:', user.id)
 
     try {
-      // Step 1: Get all team memberships for this user
-      const { data: teamMemberships, error: membershipsError } = await supabase
-        .from('team_members')
-        .select(`
-          team_id,
-          teams!inner(
-            project_id,
-            projects!inner(
-              id,
-              name,
-              description,
-              user_id,
-              created_at,
-              updated_at
-            )
-          )
-        `)
-        .eq('profile_id', user.id)
+      // Use the database function to get member projects
+      const { data: memberProjects, error: memberProjectsError } = await supabase
+        .rpc('get_member_projects', { user_profile_id: user.id })
 
-      if (membershipsError) {
-        console.error('Error fetching team memberships:', membershipsError)
+      if (memberProjectsError) {
+        console.error('Error fetching member projects:', memberProjectsError)
         return []
       }
 
-      console.log('Team memberships found:', teamMemberships?.length || 0)
+      console.log('Member projects found:', memberProjects?.length || 0)
 
-      if (!teamMemberships || teamMemberships.length === 0) {
-        console.log('No team memberships found')
+      if (!memberProjects || memberProjects.length === 0) {
+        console.log('No member projects found')
         return []
       }
 
-      // Step 2: Extract projects from memberships and filter out owned projects
-      const invitedProjects = teamMemberships
-        .map(membership => membership.teams.projects)
-        .filter(project => {
-          console.log('Checking project:', project.name, 'owner:', project.user_id, 'current user:', user.id)
-          return project.user_id !== user.id // Exclude projects owned by user
-        })
+      // Transform the data to match the expected format
+      const invitedProjects = memberProjects.map(project => ({
+        id: project.project_id,
+        name: project.project_name,
+        description: project.project_description,
+        user_id: project.project_owner_id,
+        created_at: project.project_created_at,
+        updated_at: project.project_created_at // Use created_at as updated_at fallback
+      }))
 
-      console.log('Invited projects after filtering:', invitedProjects.length)
+      console.log('Invited projects after transformation:', invitedProjects.length)
       console.log('Invited projects data:', invitedProjects)
 
       return invitedProjects

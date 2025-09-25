@@ -44,6 +44,8 @@ interface Team {
   members: TeamMember[]
   project_name?: string
   project_description?: string
+  isOwner?: boolean
+  userRole?: string
 }
 
 interface TeamsTableProps {
@@ -160,9 +162,27 @@ export function TeamsTable({ data, onTeamUpdated }: TeamsTableProps) {
         <div key={team.id} className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">{team.name}</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-lg font-semibold">{team.name}</h2>
+                {team.isOwner ? (
+                  <Badge variant="default" className="gap-1">
+                    <IconCrown className="size-3" />
+                    Owner
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1">
+                    <IconUser className="size-3" />
+                    {team.userRole?.charAt(0).toUpperCase() + team.userRole?.slice(1)}
+                  </Badge>
+                )}
+              </div>
               {team.description && (
                 <p className="text-sm text-muted-foreground">{team.description}</p>
+              )}
+              {team.project_name && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Project: {team.project_name}
+                </p>
               )}
             </div>
             <Badge variant="outline">
@@ -211,50 +231,56 @@ export function TeamsTable({ data, onTeamUpdated }: TeamsTableProps) {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={loading === member.id}
-                          >
-                            <IconDots className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleChangeRole(team.id, member.id, 'developer')}
-                            disabled={loading === member.id}
-                          >
-                            <IconUser className="size-4 mr-2" />
-                            Make Developer
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleChangeRole(team.id, member.id, 'tester')}
-                            disabled={loading === member.id}
-                          >
-                            <IconShield className="size-4 mr-2" />
-                            Make Tester
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleChangeRole(team.id, member.id, 'guest')}
-                            disabled={loading === member.id}
-                          >
-                            <IconUserCheck className="size-4 mr-2" />
-                            Make Guest
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleRemoveMember(team.id, member.id)}
-                            disabled={loading === member.id}
-                            className="text-destructive"
-                          >
-                            Remove from Team
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {team.isOwner ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={loading === member.id}
+                            >
+                              <IconDots className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleChangeRole(team.id, member.id, 'developer')}
+                              disabled={loading === member.id}
+                            >
+                              <IconUser className="size-4 mr-2" />
+                              Make Developer
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleChangeRole(team.id, member.id, 'tester')}
+                              disabled={loading === member.id}
+                            >
+                              <IconShield className="size-4 mr-2" />
+                              Make Tester
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleChangeRole(team.id, member.id, 'guest')}
+                              disabled={loading === member.id}
+                            >
+                              <IconUserCheck className="size-4 mr-2" />
+                              Make Guest
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleRemoveMember(team.id, member.id)}
+                              disabled={loading === member.id}
+                              className="text-destructive"
+                            >
+                              Remove from Team
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          View only
+                        </span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
