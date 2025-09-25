@@ -1,12 +1,14 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { QuickCreateModal } from "@/components/quick-create-modal"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { supabase } from "@/lib/supabase"
 
 const getSeverityBadgeVariant = (severity: string) => {
   switch (severity) {
@@ -36,6 +38,7 @@ const getStatusBadgeVariant = (status: string) => {
 
 export function SiteHeader() {
   const pathname = usePathname()
+  const [bugData, setBugData] = useState<{ severity: string; status: string } | null>(null)
   
   const getPageTitle = () => {
     switch (pathname) {
@@ -55,24 +58,52 @@ export function SiteHeader() {
     }
   }
 
-  // Mock bug data - in a real app, this would be fetched based on the bug ID from the URL
-  const getBugBadges = () => {
-    if (pathname.startsWith("/bug/")) {
-      // Extract bug ID from pathname
-      const bugId = pathname.split("/bug/")[1]
-      // Mock data - in real app, fetch based on bugId
-      const mockBug = {
-        severity: "CRITICAL",
-        status: "Open"
+  // Fetch bug data when on bug details page
+  useEffect(() => {
+    const fetchBugData = async () => {
+      if (pathname.startsWith("/bug/")) {
+        const bugId = pathname.split("/bug/")[1]
+        if (bugId && supabase) {
+          try {
+            const { data, error } = await supabase
+              .from('bugs')
+              .select('severity, status')
+              .eq('id', parseInt(bugId))
+              .single()
+
+            if (error) {
+              console.error('Error fetching bug data:', error)
+              return
+            }
+
+            if (data) {
+              setBugData({
+                severity: data.severity,
+                status: data.status
+              })
+            }
+          } catch (error) {
+            console.error('Error fetching bug data:', error)
+          }
+        }
+      } else {
+        setBugData(null)
       }
-      
+    }
+
+    fetchBugData()
+  }, [pathname])
+
+  // Display bug badges with real data
+  const getBugBadges = () => {
+    if (pathname.startsWith("/bug/") && bugData) {
       return (
         <div className="flex items-center gap-2">
-          <Badge variant={getSeverityBadgeVariant(mockBug.severity)}>
-            {mockBug.severity}
+          <Badge variant={getSeverityBadgeVariant(bugData.severity)}>
+            {bugData.severity}
           </Badge>
-          <Badge variant={getStatusBadgeVariant(mockBug.status)}>
-            {mockBug.status}
+          <Badge variant={getStatusBadgeVariant(bugData.status)}>
+            {bugData.status}
           </Badge>
         </div>
       )
