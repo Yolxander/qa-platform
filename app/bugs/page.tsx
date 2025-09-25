@@ -16,7 +16,6 @@ import { supabase } from "@/lib/supabase"
 import { Bug } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
 
-import bugsData from "./data.json"
 
 export default function Page() {
   const [bugs, setBugs] = useState<Bug[]>([])
@@ -29,8 +28,8 @@ export default function Page() {
       setLoading(true)
       
       if (!supabase) {
-        console.warn("Supabase not configured, using static data")
-        setBugs(bugsData as any)
+        console.warn("Supabase not configured")
+        setBugs([])
         return
       }
 
@@ -57,8 +56,7 @@ export default function Page() {
       setBugs(data || [])
     } catch (error) {
       console.error("Error loading bugs:", error)
-      // Fallback to static data if Supabase fails
-      setBugs(bugsData as any)
+      setBugs([])
     } finally {
       setLoading(false)
     }

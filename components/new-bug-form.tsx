@@ -83,7 +83,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
     environment: "Dev" as "Prod" | "Stage" | "Dev",
     url: "",
     stepsToReproduce: "",
-    assignee: "unassigned"
+    assignee: null as string | null
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,7 +115,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
           url: formData.url,
           steps_to_reproduce: formData.stepsToReproduce,
           reporter: user.email || user.user_metadata?.name || "Unknown",
-          assignee: formData.assignee === "unassigned" ? "Unassigned" : formData.assignee || "Unassigned",
+          assignee: formData.assignee,
           user_id: user.id,
           project_id: currentProject.id
         })
@@ -135,7 +135,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
         environment: "Dev",
         url: "",
         stepsToReproduce: "",
-        assignee: "unassigned"
+        assignee: null
       })
       
       if (onBugCreated) {
@@ -149,11 +149,17 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
     }
   }
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
+  }
+
+  const getAssigneeName = () => {
+    if (!formData.assignee) return "Unassigned"
+    const member = teamMembers.find(m => m.id === formData.assignee)
+    return member ? `${member.name} (${member.email})` : "Unknown"
   }
 
   const handleNext = () => {
@@ -281,7 +287,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
         environment: "Dev",
         url: "",
         stepsToReproduce: "",
-        assignee: "unassigned"
+        assignee: null
       })
       loadTeamMembers()
     }
@@ -391,8 +397,8 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
             <div className="space-y-2">
               <Label htmlFor="assignee">Assignee (Optional)</Label>
               <Select
-                value={formData.assignee}
-                onValueChange={(value) => handleInputChange("assignee", value)}
+                value={formData.assignee || ""}
+                onValueChange={(value) => handleInputChange("assignee", value === "unassigned" ? null : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a team member or leave unassigned" />
@@ -405,7 +411,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
                     </SelectItem>
                   ) : teamMembers.length > 0 ? (
                     teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.name}>
+                      <SelectItem key={member.id} value={member.id}>
                         {member.name} ({member.email})
                       </SelectItem>
                     ))
@@ -449,7 +455,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
 
               <div className="rounded-lg border p-3">
                 <h4 className="font-medium mb-2 text-sm">Assignment</h4>
-                <p className="text-sm text-gray-600"><strong>Assignee:</strong> {formData.assignee || "Unassigned"}</p>
+                <p className="text-sm text-gray-600"><strong>Assignee:</strong> {getAssigneeName()}</p>
               </div>
             </div>
 

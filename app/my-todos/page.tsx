@@ -21,7 +21,6 @@ import { supabase } from "@/lib/supabase"
 import { Todo } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
 
-import todoData from "./data.json"
 
 export default function Page() {
   const [currentView, setCurrentView] = useState<"table" | "kanban">("table");
@@ -35,8 +34,8 @@ export default function Page() {
       setLoading(true);
       
       if (!supabase) {
-        console.warn("Supabase not configured, using static data");
-        setTodos(todoData as any);
+        console.warn("Supabase not configured");
+        setTodos([]);
         return;
       }
 
@@ -63,8 +62,7 @@ export default function Page() {
       setTodos(data || []);
     } catch (error) {
       console.error("Error loading todos:", error);
-      // Fallback to static data if Supabase fails
-      setTodos(todoData as any);
+      setTodos([]);
     } finally {
       setLoading(false);
     }

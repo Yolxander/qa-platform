@@ -6,7 +6,6 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-import qaData from "./data.json"
 
 export default function Page() {
   return (
@@ -30,7 +29,7 @@ export default function Page() {
                   Issues waiting for verification and testing
                 </p>
               </div>
-              <QATable data={qaData} />
+              <QATable data={[]} />
             </div>
           </div>
         </div>
