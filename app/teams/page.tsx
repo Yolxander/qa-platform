@@ -60,14 +60,24 @@ export default function Page() {
         return
       }
 
+      if (!currentProject) {
+        setTeams([])
+        return
+      }
+
       // Load teams where user is owner (current project teams)
       const ownedTeams = currentProject ? await loadOwnedTeams() : []
       
       // Load teams where user is member but not owner
       const memberTeams = await loadMemberTeams()
 
+      // Filter member teams to only show those connected to the current project
+      const filteredMemberTeams = memberTeams.filter(team => 
+        team.project_id === currentProject.id
+      )
+
       // Combine both types of teams
-      const allTeams = [...ownedTeams, ...memberTeams]
+      const allTeams = [...ownedTeams, ...filteredMemberTeams]
       
       setTeams(allTeams)
     } catch (error) {
@@ -235,10 +245,16 @@ export default function Page() {
                   <div>
                     <h1 className="text-2xl font-bold tracking-tight">Teams</h1>
                     <p className="text-muted-foreground">
-                      {currentProject ? `Teams for ${currentProject.name}` : 'Your teams and teams you\'re a member of'}
+                      {currentProject ? 
+                        (currentProject.isInvited ? 
+                          `Teams you're a member of in ${currentProject.name}` : 
+                          `Teams for ${currentProject.name}`
+                        ) : 
+                        'Your teams and teams you\'re a member of'
+                      }
                     </p>
                   </div>
-                  {currentProject && (
+                  {currentProject && !currentProject.isInvited && (
                     <div className="flex items-center gap-2">
                       <NewTeamForm onTeamCreated={handleTeamUpdated}>
                         <Button variant="outline">

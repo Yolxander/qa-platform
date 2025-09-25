@@ -357,8 +357,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 const isUnderMaintenance = item.underMaintenance
                 const isInvitedProject = currentProject?.isInvited
                 
-                // Hide "Ready for QA" and "Teams" for invited projects
-                if (isInvitedProject && (item.title === "Ready for QA" || item.title === "Teams")) {
+                // Hide "Ready for QA" for invited projects, but allow "Teams"
+                if (isInvitedProject && item.title === "Ready for QA") {
                   return null
                 }
                 

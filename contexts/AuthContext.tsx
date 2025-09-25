@@ -73,9 +73,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const allProjects = [
         ...(ownedProjects || []).map(p => ({ ...p, isInvited: false })),
         ...(invitedProjects.map(p => ({ ...p, isInvited: true })))
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      ]
 
-      setProjects(allProjects)
+      // Final deduplication to ensure no project appears twice (should be rare but safety check)
+      const uniqueAllProjects = allProjects.reduce((acc, project) => {
+        const existingProject = acc.find(p => p.id === project.id)
+        if (!existingProject) {
+          acc.push(project)
+        } else {
+          // If project exists, prioritize owned over invited
+          if (!existingProject.isInvited && project.isInvited) {
+            // Keep the owned version, skip the invited version
+            return acc
+          } else if (existingProject.isInvited && !project.isInvited) {
+            // Replace invited with owned version
+            const index = acc.findIndex(p => p.id === project.id)
+            acc[index] = project
+          }
+        }
+        return acc
+      }, [] as typeof allProjects)
+
+      // Sort by creation date
+      const sortedProjects = uniqueAllProjects.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      setProjects(sortedProjects)
     } catch (error) {
       console.error('Error fetching projects:', error)
     }
@@ -105,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Transform the data to match the expected format
-      const invitedProjects = memberProjects.map(project => ({
+      const transformedProjects = memberProjects.map(project => ({
         id: project.project_id,
         name: project.project_name,
         description: project.project_description,
@@ -114,10 +136,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updated_at: project.project_created_at // Use created_at as updated_at fallback
       }))
 
-      console.log('Invited projects after transformation:', invitedProjects.length)
-      console.log('Invited projects data:', invitedProjects)
+      // Deduplicate projects by project ID to avoid showing the same project multiple times
+      // This can happen if a user is a member of multiple teams within the same project
+      const uniqueProjects = transformedProjects.reduce((acc, project) => {
+        const existingProject = acc.find(p => p.id === project.id)
+        if (!existingProject) {
+          acc.push(project)
+        }
+        return acc
+      }, [] as typeof transformedProjects)
 
-      return invitedProjects
+      console.log('Invited projects after transformation:', transformedProjects.length)
+      console.log('Unique invited projects after deduplication:', uniqueProjects.length)
+      console.log('Invited projects data:', uniqueProjects)
+
+      return uniqueProjects
     } catch (error) {
       console.error('Error fetching invited projects:', error)
       return []
