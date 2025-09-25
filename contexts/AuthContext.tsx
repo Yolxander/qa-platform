@@ -427,17 +427,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Creating project:', { name, description, user: user?.id })
       
+      // Check environment variables first
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Supabase environment variables not configured')
+        return { 
+          error: { 
+            message: 'Supabase not configured. Please create a .env.local file with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.' 
+          }, 
+          data: null 
+        }
+      }
+      
       if (!supabase) {
-        console.error('Supabase not configured')
-        return { error: { message: 'Database not configured. Please check your environment variables.' }, data: null }
+        console.error('Supabase client not initialized')
+        return { error: { message: 'Database client not initialized. Please check your environment variables.' }, data: null }
       }
 
       if (!user) {
         console.error('User not authenticated')
-        return { error: { message: 'User not authenticated' }, data: null }
+        return { error: { message: 'User not authenticated. Please log in and try again.' }, data: null }
       }
 
       console.log('Attempting to insert project into database...')
+      console.log('Supabase URL:', supabaseUrl)
+      console.log('User ID:', user.id)
+      
       const { data, error } = await supabase
         .from('projects')
         .insert({
@@ -465,6 +482,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           errorMessage = 'Permission denied. Please check your database permissions.'
         } else if (error.message.includes('relation "projects" does not exist')) {
           errorMessage = 'Projects table not found. Please run the complete database schema.'
+        } else if (error.code === 'PGRST301') {
+          errorMessage = 'Database connection failed. Please check your Supabase configuration.'
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and Supabase URL.'
         }
         
         return { error: { message: errorMessage }, data: null }
@@ -478,7 +499,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: null, data }
     } catch (error) {
       console.error('Network error in createProject:', error)
-      return { error: { message: 'Network error. Please check your connection and try again.' }, data: null }
+      console.error('Error type:', typeof error)
+      console.error('Error message:', error instanceof Error ? error.message : String(error))
+      
+      // Provide more specific error messages based on error type
+      let errorMessage = 'Network error. Please check your connection and try again.'
+      
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        errorMessage = 'Cannot connect to Supabase. Please check your internet connection and Supabase configuration.'
+      } else if (error instanceof Error) {
+        errorMessage = `Error: ${error.message}`
+      }
+      
+      return { error: { message: errorMessage }, data: null }
     }
   }
 

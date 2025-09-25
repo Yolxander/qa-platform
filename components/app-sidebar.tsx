@@ -260,12 +260,32 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [maintenanceFeatureName, setMaintenanceFeatureName] = React.useState("")
   
   const handleAddProject = async (projectName: string, description?: string) => {
-    const { error, data } = await createProject(projectName, description)
-    if (error) {
-      console.error('Error creating project:', error)
-      alert(`Error creating project: ${error.message || 'Unknown error'}. Please check the console for more details.`)
-    } else if (data) {
-      setCurrentProject(data)
+    try {
+      const { error, data } = await createProject(projectName, description)
+      if (error) {
+        console.error('Error creating project:', error)
+        
+        // Show more user-friendly error messages
+        let userMessage = error.message || 'Unknown error occurred'
+        
+        // Provide specific guidance based on error type
+        if (userMessage.includes('Supabase not configured')) {
+          userMessage = 'Database not configured. Please contact your administrator to set up Supabase.'
+        } else if (userMessage.includes('User not authenticated')) {
+          userMessage = 'Please log in to create a project.'
+        } else if (userMessage.includes('Projects table does not exist')) {
+          userMessage = 'Database setup incomplete. Please contact your administrator.'
+        } else if (userMessage.includes('Network error') || userMessage.includes('Failed to fetch')) {
+          userMessage = 'Connection error. Please check your internet connection and try again.'
+        }
+        
+        alert(`Error creating project: ${userMessage}`)
+      } else if (data) {
+        setCurrentProject(data)
+      }
+    } catch (error) {
+      console.error('Unexpected error in handleAddProject:', error)
+      alert('An unexpected error occurred. Please try again.')
     }
   }
 
