@@ -39,15 +39,15 @@ export default function Page() {
         return
       }
 
-      // If it's an invited project, only show bugs assigned to the current user
+      // Show bugs where user is either the creator (user_id) or assignee
       let query = supabase
         .from('bugs')
         .select('*')
         .eq('project_id', currentProject.id)
 
-      if (currentProject.isInvited && user?.email) {
-        // For invited projects, only show bugs assigned to the current user
-        query = query.eq('assignee', user.email)
+      if (user?.id) {
+        // Show bugs where user is either the creator or the assignee
+        query = query.or(`user_id.eq.${user.id},assignee.eq.${user.id}`)
       }
 
       const { data, error } = await query.order('created_at', { ascending: false })
@@ -102,10 +102,7 @@ export default function Page() {
                   <div>
                     <h1 className="text-2xl font-bold tracking-tight">Bugs</h1>
                     <p className="text-muted-foreground">
-                      {currentProject?.isInvited 
-                        ? `Bugs assigned to you in ${currentProject.name}`
-                        : "Bug reports and issue tracking"
-                      }
+                      Bugs you created or are assigned to in {currentProject?.name}
                     </p>
                   </div>
                   {!currentProject?.isInvited && (

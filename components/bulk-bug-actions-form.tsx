@@ -70,11 +70,18 @@ export function BulkBugActionsForm({ children, onBugsUpdated }: BulkBugActionsFo
         return
       }
 
-      const { data, error } = await supabase
+      // Show bugs where user is either the creator (user_id) or assignee
+      let query = supabase
         .from('bugs')
         .select('*')
         .eq('project_id', currentProject.id)
-        .order('created_at', { ascending: false })
+
+      if (user?.id) {
+        // Show bugs where user is either the creator or the assignee
+        query = query.or(`user_id.eq.${user.id},assignee.eq.${user.id}`)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       setBugs(data || [])
