@@ -171,6 +171,12 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Only process submission on the final step
+    if (currentStep !== 3) {
+      return
+    }
+
     if (!user || !currentProject) {
       toast.error("You must be logged in and have a project selected")
       return
@@ -209,46 +215,15 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
         return
       }
 
-      // Store the selected teams information in a separate table or as metadata
-      // For now, we'll create team assignments directly if the user already exists
-      // This is a simplified approach - in a production system, you'd want to store
-      // the team selection and apply it when the user accepts the invitation
-      
+      // Get team names for success message
       const teamNames = teams
         .filter(team => formData.selectedTeams.includes(team.id))
         .map(team => team.name)
         .join(', ')
 
-      // Try to find existing user and add them to selected teams immediately
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', formData.email)
-        .single()
-
-      if (existingProfile) {
-        // User exists, add them to the selected teams
-        const teamMemberPromises = formData.selectedTeams.map(teamId =>
-          supabase.from('team_members').insert({
-            team_id: teamId,
-            profile_id: existingProfile.id,
-            role: formData.role
-          }).select()
-        )
-
-        const teamResults = await Promise.all(teamMemberPromises)
-        const teamErrors = teamResults.filter(result => result.error)
-        
-        if (teamErrors.length > 0) {
-          console.warn("Some team assignments failed:", teamErrors)
-          toast.success(`User added to project. Some team assignments may have failed.`)
-        } else {
-          toast.success(`User added to project and assigned to: ${teamNames}`)
-        }
-      } else {
-        // User doesn't exist yet, invitation sent
-        toast.success(`Team invitation sent successfully! When they register, they'll be added to: ${teamNames}`)
-      }
+      // Success message - invitation sent regardless of whether user exists or not
+      // The user will be added to teams when they accept the invitation
+      toast.success(`Team invitation sent successfully! When they accept the invitation, they'll be added to: ${teamNames}`)
 
       setOpen(false)
       setCurrentStep(1)
@@ -286,8 +261,26 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
     }))
   }
 
-  const handleNext = () => {
+  const handleNext = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
     if (currentStep < 3) {
+      // Validate current step before proceeding
+      if (currentStep === 1) {
+        if (!formData.name.trim() || !formData.email.trim()) {
+          toast.error("Please fill in both name and email fields")
+          return
+        }
+      } else if (currentStep === 2) {
+        if (formData.selectedTeams.length === 0) {
+          toast.error("Please select at least one team")
+          return
+        }
+      }
+      
       setCurrentStep(currentStep + 1)
     }
   }
