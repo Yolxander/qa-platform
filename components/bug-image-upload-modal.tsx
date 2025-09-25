@@ -109,6 +109,13 @@ export function BugImageUploadModal({
         return
       }
 
+      console.log('Supabase client configured:', !!supabase)
+      console.log('Supabase URL:', supabase.supabaseUrl)
+      
+      // Check current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      console.log('Current user:', user?.id, userError)
+
       // First, verify that the user has access to this bug
       const { data: bugData, error: bugError } = await supabase
         .from('bugs')
@@ -130,11 +137,15 @@ export function BugImageUploadModal({
         const filePath = `${bugId}/${fileName}`
 
         // Upload file to Supabase Storage
+        console.log('Uploading file:', file.name, 'to path:', filePath)
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('bug-images')
           .upload(filePath, file)
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError)
+          throw uploadError
+        }
 
         // Get public URL
         const { data: { publicUrl } } = supabase.storage

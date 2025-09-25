@@ -183,10 +183,49 @@ export function BugDetailsContent({ bugId }: BugDetailsContentProps) {
     }
   }, [bugId])
 
-  const handleAddComment = () => {
-    if (newComment.trim()) {
-      console.log("Adding comment:", newComment)
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !supabase) return
+
+    try {
+      // Get current user info
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.error('User not authenticated')
+        return
+      }
+
+      // Get user's name from profile or auth metadata
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single()
+
+      const authorName = profile?.name || user.user_metadata?.name || user.email || 'Unknown'
+
+      // Insert comment into database
+      const { data, error } = await supabase
+        .from('bug_comments')
+        .insert({
+          bug_id: bugId,
+          author: authorName,
+          content: newComment.trim()
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error adding comment:', error)
+        return
+      }
+
+      // Add comment to local state
+      setComments(prev => [...prev, data])
       setNewComment("")
+      
+      console.log("Comment added successfully:", data)
+    } catch (error) {
+      console.error('Error adding comment:', error)
     }
   }
 
