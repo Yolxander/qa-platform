@@ -163,6 +163,7 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
         .insert({
           title: formData.title,
           issue_link: issueLink,
+          status: 'OPEN',
           severity: formData.severity,
           environment: formData.environment,
           assignee: formData.assignee,

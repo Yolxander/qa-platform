@@ -112,6 +112,7 @@ export function QuickAddForm({ children, onTodosCreated }: QuickAddFormProps) {
       const todosToInsert = validTodos.map(todo => ({
         title: todo.title,
         issue_link: null,
+        status: 'OPEN',
         severity: todo.severity,
         environment: todo.environment,
         assignee: todo.assignee,

@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       .from('todos')
       .insert({
         ...body,
+        status: body.status || 'OPEN',
         user_id: user.id
       })
       .select()
