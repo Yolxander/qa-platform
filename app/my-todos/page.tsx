@@ -72,6 +72,26 @@ export default function Page() {
     loadTodos();
   }, [currentProject]);
 
+  // Listen for custom events to refresh todos
+  useEffect(() => {
+    const handleTodoCreated = () => {
+      loadTodos();
+    };
+
+    const handleTasksAssigned = () => {
+      loadTodos();
+    };
+
+    // Listen for custom events
+    window.addEventListener('todoCreated', handleTodoCreated);
+    window.addEventListener('tasksAssigned', handleTasksAssigned);
+
+    return () => {
+      window.removeEventListener('todoCreated', handleTodoCreated);
+      window.removeEventListener('tasksAssigned', handleTasksAssigned);
+    };
+  }, []);
+
   const handleTodoCreated = () => {
     loadTodos();
   };

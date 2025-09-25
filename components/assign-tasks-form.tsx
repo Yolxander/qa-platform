@@ -153,6 +153,9 @@ export function AssignTasksForm({ children, onTasksAssigned }: AssignTasksFormPr
       if (onTasksAssigned) {
         onTasksAssigned()
       }
+      
+      // Dispatch custom event for page refresh
+      window.dispatchEvent(new CustomEvent('tasksAssigned'))
     } catch (error) {
       console.error("Error assigning tasks:", error)
       toast.error("Failed to assign tasks")

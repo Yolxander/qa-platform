@@ -155,6 +155,9 @@ export function QuickAddForm({ children, onTodosCreated }: QuickAddFormProps) {
       if (onTodosCreated) {
         onTodosCreated()
       }
+      
+      // Dispatch custom event for page refresh
+      window.dispatchEvent(new CustomEvent('todoCreated'))
     } catch (error) {
       console.error("Error creating todos:", error)
       toast.error("Failed to create todos")

@@ -201,6 +201,9 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
       if (onTodoCreated) {
         onTodoCreated()
       }
+      
+      // Dispatch custom event for page refresh
+      window.dispatchEvent(new CustomEvent('todoCreated'))
     } catch (error) {
       console.error("Error creating todo:", error)
       toast.error("Failed to create todo. Please check your Supabase configuration.")
