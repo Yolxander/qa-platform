@@ -61,10 +61,19 @@ const steps = [
   }
 ]
 
+interface TeamMember {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
 export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [teamMembersLoading, setTeamMembersLoading] = useState(false)
   const { user, currentProject } = useAuth()
 
   const [formData, setFormData] = useState({
@@ -74,7 +83,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
     environment: "Dev" as "Prod" | "Stage" | "Dev",
     url: "",
     stepsToReproduce: "",
-    assignee: ""
+    assignee: "unassigned"
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,7 +115,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
           url: formData.url,
           steps_to_reproduce: formData.stepsToReproduce,
           reporter: user.email || user.user_metadata?.name || "Unknown",
-          assignee: formData.assignee || "Unassigned",
+          assignee: formData.assignee === "unassigned" ? "Unassigned" : formData.assignee || "Unassigned",
           user_id: user.id,
           project_id: currentProject.id
         })
@@ -126,7 +135,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
         environment: "Dev",
         url: "",
         stepsToReproduce: "",
-        assignee: ""
+        assignee: "unassigned"
       })
       
       if (onBugCreated) {
@@ -159,12 +168,124 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
     }
   }
 
-  // Reset step when modal opens
+  const loadTeamMembers = async () => {
+    try {
+      setTeamMembersLoading(true)
+      
+      if (!supabase || !currentProject || !user) {
+        setTeamMembers([])
+        return
+      }
+
+      let allMembers: TeamMember[] = []
+
+      // For owned projects: get teams directly from the project
+      if (!currentProject.isInvited) {
+        const { data: teams, error: teamsError } = await supabase
+          .from('teams')
+          .select('id')
+          .eq('project_id', currentProject.id)
+
+        if (teamsError) throw teamsError
+
+        if (teams && teams.length > 0) {
+          // Get team members for each team using the database function
+          const teamsWithMembers = await Promise.all(
+            teams.map(async (team) => {
+              const { data: membersData, error: membersError } = await supabase
+                .rpc('get_team_members', { team_uuid: team.id })
+
+              if (membersError) {
+                console.error('Error fetching team members:', membersError)
+                return []
+              }
+
+              return (membersData || []).map(member => ({
+                id: member.member_id,
+                name: member.member_name || 'Unknown',
+                email: member.member_email,
+                role: member.role
+              }))
+            })
+          )
+
+          allMembers = teamsWithMembers.flat()
+        }
+      } else {
+        // For invited projects: use the get_member_teams function
+        const { data: memberTeamsData, error: memberTeamsError } = await supabase
+          .rpc('get_member_teams', { user_profile_id: user.id })
+
+        if (memberTeamsError) {
+          console.error('Error fetching member teams:', memberTeamsError)
+          setTeamMembers([])
+          return
+        }
+
+        if (memberTeamsData && memberTeamsData.length > 0) {
+          // Filter teams for the current project
+          const projectTeams = memberTeamsData.filter(team => 
+            team.project_id === currentProject.id
+          )
+
+          // Get team members for each team in the current project
+          const teamsWithMembers = await Promise.all(
+            projectTeams.map(async (teamData) => {
+              const { data: membersData, error: membersError } = await supabase
+                .rpc('get_team_members', { team_uuid: teamData.team_id })
+
+              if (membersError) {
+                console.error('Error fetching team members:', membersError)
+                return []
+              }
+
+              return (membersData || []).map(member => ({
+                id: member.member_id,
+                name: member.member_name || 'Unknown',
+                email: member.member_email,
+                role: member.role
+              }))
+            })
+          )
+
+          allMembers = teamsWithMembers.flat()
+        }
+      }
+
+      // Deduplicate members by ID to avoid showing the same person multiple times
+      const uniqueMembers = allMembers.reduce((acc, member) => {
+        const existingMember = acc.find(m => m.id === member.id)
+        if (!existingMember) {
+          acc.push(member)
+        }
+        return acc
+      }, [] as TeamMember[])
+
+      setTeamMembers(uniqueMembers)
+    } catch (error) {
+      console.error("Error loading team members:", error)
+      setTeamMembers([])
+    } finally {
+      setTeamMembersLoading(false)
+    }
+  }
+
+  // Reset step when modal opens and load team members
   React.useEffect(() => {
     if (open) {
       setCurrentStep(1)
+      setFormData({
+        title: "",
+        description: "",
+        severity: "MEDIUM",
+        environment: "Dev",
+        url: "",
+        stepsToReproduce: "",
+        assignee: "unassigned"
+      })
+      loadTeamMembers()
     }
-  }, [open])
+  }, [open, currentProject])
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -268,13 +389,38 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee</Label>
-              <Input
-                id="assignee"
-                placeholder="Team member name (optional)"
+              <Label htmlFor="assignee">Assignee (Optional)</Label>
+              <Select
                 value={formData.assignee}
-                onChange={(e) => handleInputChange("assignee", e.target.value)}
-              />
+                onValueChange={(value) => handleInputChange("assignee", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a team member or leave unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {teamMembersLoading ? (
+                    <SelectItem value="loading" disabled>
+                      Loading team members...
+                    </SelectItem>
+                  ) : teamMembers.length > 0 ? (
+                    teamMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.name}>
+                        {member.name} ({member.email})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-members" disabled>
+                      No team members found
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {teamMembers.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {teamMembers.length} team member{teamMembers.length !== 1 ? 's' : ''} available
+                </p>
+              )}
             </div>
           </div>
         )
