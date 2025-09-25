@@ -120,17 +120,19 @@ export function EditTeamForm({ children, onTeamUpdated }: EditTeamFormProps) {
 
         if (error) throw error
       } else {
-        // Create new team
-        const { error } = await supabase
-          .from('teams')
-          .insert({
-            name: formData.name,
-            description: formData.description || null,
-            project_id: currentProject.id,
-            created_by: user.id
+        // Create new team using the database function
+        const { data: result, error } = await supabase
+          .rpc('create_team_with_owner', {
+            team_name: formData.name,
+            team_description: formData.description || null,
+            project_id_param: currentProject.id
           })
 
         if (error) throw error
+
+        if (!result?.success) {
+          throw new Error(result?.message || 'Failed to create team')
+        }
       }
 
       toast.success("Team updated successfully!")

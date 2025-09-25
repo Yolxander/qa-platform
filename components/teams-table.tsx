@@ -171,8 +171,8 @@ export function TeamsTable({ data, onTeamUpdated }: TeamsTableProps) {
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="gap-1">
-                    <IconUser className="size-3" />
-                    {team.userRole?.charAt(0).toUpperCase() + team.userRole?.slice(1)}
+                    <IconUserCheck className="size-3" />
+                    Invited
                   </Badge>
                 )}
               </div>
@@ -202,7 +202,7 @@ export function TeamsTable({ data, onTeamUpdated }: TeamsTableProps) {
               </TableHeader>
               <TableBody>
                 {team.members.map((member) => (
-                  <TableRow key={member.id}>
+                  <TableRow key={`${team.id}-${member.id}`}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="size-8">

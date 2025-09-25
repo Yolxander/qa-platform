@@ -76,8 +76,16 @@ export default function Page() {
         team.project_id === currentProject.id
       )
 
+      // Get owned team IDs to avoid duplicates
+      const ownedTeamIds = new Set(ownedTeams.map(team => team.id))
+      
+      // Filter out member teams that are already in owned teams
+      const uniqueMemberTeams = filteredMemberTeams.filter(team => 
+        !ownedTeamIds.has(team.id)
+      )
+
       // Combine both types of teams
-      const allTeams = [...ownedTeams, ...filteredMemberTeams]
+      const allTeams = [...ownedTeams, ...uniqueMemberTeams]
       
       setTeams(allTeams)
     } catch (error) {
@@ -136,12 +144,17 @@ export default function Page() {
             avatar_url: member.member_avatar_url
           }))
 
+          // Check if current user is the team creator (has owner role in team_members)
+          const userMember = members.find(member => member.id === user?.id)
+          const isTeamOwner = userMember?.role === 'owner'
+
           return {
             ...team,
             members,
             project_name: team.projects.name,
             project_description: team.projects.description,
-            isOwner: true
+            isOwner: isTeamOwner,
+            userRole: userMember?.role || 'member'
           }
         })
       )
@@ -202,7 +215,7 @@ export default function Page() {
             project_name: teamData.project_name,
             project_description: teamData.project_description,
             isOwner: false,
-            userRole: teamData.user_role
+            userRole: teamData.role
           }
         })
       )

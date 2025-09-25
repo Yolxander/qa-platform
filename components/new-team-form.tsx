@@ -58,19 +58,20 @@ export function NewTeamForm({ children, onTeamCreated }: NewTeamFormProps) {
 
     setLoading(true)
     try {
-      const { data: insertedTeam, error } = await supabase
-        .from('teams')
-        .insert({
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          project_id: currentProject.id,
-          created_by: user.id
+      // Use the database function to create team and auto-add creator as owner
+      const { data: result, error } = await supabase
+        .rpc('create_team_with_owner', {
+          team_name: formData.name.trim(),
+          team_description: formData.description.trim() || null,
+          project_id_param: currentProject.id
         })
-        .select()
-        .single()
 
       if (error) {
         throw error
+      }
+
+      if (!result?.success) {
+        throw new Error(result?.message || 'Failed to create team')
       }
 
       toast.success("Team created successfully!")
