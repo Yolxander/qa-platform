@@ -194,23 +194,32 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
 
     setLoading(true)
     try {
-      // Create a single project-level invitation (current system limitation)
-      // Store selected teams information in the invitation for later processing
-      const { data, error } = await supabase.rpc('create_team_invitation', {
-        invite_email: formData.email,
-        invite_name: formData.name,
-        project_id_param: currentProject.id,
-        invite_role: formData.role
-      })
+      // Create invitations for each selected team
+      const invitationPromises = formData.selectedTeams.map(teamId =>
+        supabase.rpc('create_team_invitation', {
+          invite_email: formData.email,
+          invite_name: formData.name,
+          project_id_param: currentProject.id,
+          team_id_param: teamId,
+          invite_role: formData.role
+        })
+      )
 
-      if (error) {
-        console.error("Error creating team invitation:", error)
-        if (error.message.includes('already exists') || error.message.includes('duplicate')) {
-          toast.error("An invitation for this email already exists for this project")
-        } else if (error.message.includes('Access denied')) {
+      const results = await Promise.all(invitationPromises)
+      
+      // Check for any errors
+      const errors = results.filter(result => result.error)
+      if (errors.length > 0) {
+        const firstError = errors[0].error
+        console.error("Error creating team invitations:", firstError)
+        if (firstError.message.includes('already exists') || firstError.message.includes('duplicate')) {
+          toast.error("An invitation for this email already exists for one or more of the selected teams")
+        } else if (firstError.message.includes('Access denied')) {
           toast.error("You don't have permission to invite members to this project")
+        } else if (firstError.message.includes('Team does not belong')) {
+          toast.error("One or more selected teams don't belong to this project")
         } else {
-          toast.error("Failed to create team invitation. Please try again.")
+          toast.error("Failed to create team invitations. Please try again.")
         }
         return
       }
@@ -221,9 +230,8 @@ export function AddTeamMemberForm({ children, onTeamUpdated }: AddTeamMemberForm
         .map(team => team.name)
         .join(', ')
 
-      // Success message - invitation sent regardless of whether user exists or not
-      // The user will be added to teams when they accept the invitation
-      toast.success(`Team invitation sent successfully! When they accept the invitation, they'll be added to: ${teamNames}`)
+      // Success message - invitations sent for each team
+      toast.success(`Team invitations sent successfully! When they accept the invitations, they'll be added to: ${teamNames}`)
 
       setOpen(false)
       setCurrentStep(1)
