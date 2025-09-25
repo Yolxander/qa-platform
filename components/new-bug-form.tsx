@@ -111,6 +111,7 @@ export function NewBugForm({ children, onBugCreated }: NewBugFormProps) {
           title: formData.title,
           description: formData.description,
           severity: formData.severity,
+          status: 'Open', // Set default status for new bugs
           environment: formData.environment,
           url: formData.url,
           steps_to_reproduce: formData.stepsToReproduce,
