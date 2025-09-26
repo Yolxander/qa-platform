@@ -186,7 +186,9 @@ const createColumns = (
     accessorKey: "assignee",
     header: "Assignee",
     cell: ({ row }) => (
-      <span className="text-sm">{row.original.assignee}</span>
+      <span className={`text-sm ${!row.original.assignee || row.original.assignee === "Unassigned" ? "text-muted-foreground italic" : ""}`}>
+        {row.original.assignee || "Unassigned"}
+      </span>
     ),
   },
   {

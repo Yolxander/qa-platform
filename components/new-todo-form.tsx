@@ -59,7 +59,7 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
     issue_link: "",
     severity: "MEDIUM" as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
     environment: "Dev" as "Prod" | "Stage" | "Dev",
-    assignee: "",
+    assignee: null as string | null,
     due_date: "Today"
   })
 
@@ -108,34 +108,96 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
     try {
       setTeamMembersLoading(true)
       
-      if (!supabase || !currentProject) {
+      if (!supabase || !currentProject || !user) {
         setTeamMembers([])
         return
       }
 
-      // Get team members for the current project
-      const { data, error } = await supabase
-        .from('team_members')
-        .select(`
-          profiles!inner(
-            id,
-            name,
-            email
+      let allMembers: TeamMember[] = []
+
+      // For owned projects: get teams directly from the project
+      if (!currentProject.isInvited) {
+        const { data: teams, error: teamsError } = await supabase
+          .from('teams')
+          .select('id')
+          .eq('project_id', currentProject.id)
+
+        if (teamsError) throw teamsError
+
+        if (teams && teams.length > 0) {
+          // Get team members for each team using the database function
+          const teamsWithMembers = await Promise.all(
+            teams.map(async (team) => {
+              const { data: membersData, error: membersError } = await supabase
+                .rpc('get_team_members', { team_uuid: team.id })
+
+              if (membersError) {
+                console.error('Error fetching team members:', membersError)
+                return []
+              }
+
+              return (membersData || []).map(member => ({
+                id: member.member_id,
+                name: member.member_name || 'Unknown',
+                email: member.member_email,
+                role: member.role
+              }))
+            })
           )
-        `)
-        .eq('teams.project_id', currentProject.id)
-        .order('profiles.name')
 
-      if (error) throw error
+          allMembers = teamsWithMembers.flat()
+        }
+      } else {
+        // For invited projects: use the get_member_teams function
+        const { data: memberTeamsData, error: memberTeamsError } = await supabase
+          .rpc('get_member_teams', { user_profile_id: user.id })
 
-      const members = (data || []).map(member => ({
-        id: member.profiles.id,
-        name: member.profiles.name || 'Unknown',
-        email: member.profiles.email,
-        role: 'member' // Default role for display
-      }))
+        if (memberTeamsError) {
+          console.error('Error fetching member teams:', memberTeamsError)
+          setTeamMembers([])
+          return
+        }
 
-      setTeamMembers(members)
+        if (memberTeamsData && memberTeamsData.length > 0) {
+          // Filter teams for the current project
+          const projectTeams = memberTeamsData.filter(team => 
+            team.project_id === currentProject.id
+          )
+
+          // Get team members for each team in the current project
+          const teamsWithMembers = await Promise.all(
+            projectTeams.map(async (teamData) => {
+              const { data: membersData, error: membersError } = await supabase
+                .rpc('get_team_members', { team_uuid: teamData.team_id })
+
+              if (membersError) {
+                console.error('Error fetching team members:', membersError)
+                return []
+              }
+
+              return (membersData || []).map(member => ({
+                id: member.member_id,
+                name: member.member_name || 'Unknown',
+                email: member.member_email,
+                role: member.role
+              }))
+            })
+          )
+
+          allMembers = teamsWithMembers.flat()
+        }
+      }
+
+      // Deduplicate members by ID to avoid showing the same person multiple times
+      const uniqueMembers = allMembers.reduce((acc, member) => {
+        const existingMember = acc.find(m => m.id === member.id)
+        if (!existingMember) {
+          acc.push(member)
+        }
+        return acc
+      }, [] as TeamMember[])
+
+      setTeamMembers(uniqueMembers)
     } catch (error) {
       console.error("Error loading team members:", error)
       setTeamMembers([])
@@ -201,7 +263,7 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
         issue_link: "",
         severity: "MEDIUM",
         environment: "Dev",
-        assignee: "",
+        assignee: null,
         due_date: "Today"
       })
       
@@ -219,7 +281,7 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
     }
   }
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -323,33 +385,38 @@ export function NewTodoForm({ children, onTodoCreated }: NewTodoFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee *</Label>
+              <Label htmlFor="assignee">Assignee (Optional)</Label>
               <Select
-                value={formData.assignee}
-                onValueChange={(value) => handleInputChange("assignee", value)}
+                value={formData.assignee || ""}
+                onValueChange={(value) => handleInputChange("assignee", value === "unassigned" ? null : value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select team member" />
+                  <SelectValue placeholder="Select a team member or leave unassigned" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {teamMembersLoading ? (
-                    <SelectItem value="loading" disabled>Loading team members...</SelectItem>
-                  ) : teamMembers.length === 0 ? (
-                    <SelectItem value="no-members" disabled>No team members found</SelectItem>
-                  ) : (
+                    <SelectItem value="loading" disabled>
+                      Loading team members...
+                    </SelectItem>
+                  ) : teamMembers.length > 0 ? (
                     teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.name}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{member.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {member.email}
-                          </span>
-                        </div>
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name} ({member.email})
                       </SelectItem>
                     ))
+                  ) : (
+                    <SelectItem value="no-members" disabled>
+                      No team members found
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
+              {teamMembers.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {teamMembers.length} team member{teamMembers.length !== 1 ? 's' : ''} available
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

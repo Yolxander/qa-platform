@@ -76,7 +76,6 @@ const data = {
       title: "Ready for QA",
       url: "/ready-for-qa",
       icon: IconChartBar,
-      underMaintenance: true,
     },
     {
       title: "Teams",
