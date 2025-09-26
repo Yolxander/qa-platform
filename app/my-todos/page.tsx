@@ -107,9 +107,13 @@ export default function Page() {
     issueLink: todo.issue_link || "",
     status: todo.status,
     severity: todo.severity,
-    dueDate: todo.due_date,
+    dueDate: todo.due_date ? new Date(todo.due_date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }) : 'No due date',
     environment: todo.environment,
-    assignee: todo.assignee,
+    assignee: todo.assignee_name,
     quickAction: todo.quick_action
   }));
 
