@@ -10,25 +10,53 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export function SectionCards() {
+interface MetricsData {
+  openIssues: number
+  readyForQA: number
+  mttr: string
+  criticalOpen: number
+  totalBugs: number
+  totalTodos: number
+  openTodos: number
+  inProgressTodos: number
+  doneTodos: number
+}
+
+interface SectionCardsProps {
+  data?: MetricsData
+}
+
+export function SectionCards({ data }: SectionCardsProps) {
+  // Use real data if available, otherwise show loading state
+  const metrics = data || {
+    openIssues: 0,
+    readyForQA: 0,
+    mttr: 'N/A',
+    criticalOpen: 0,
+    totalBugs: 0,
+    totalTodos: 0,
+    openTodos: 0,
+    inProgressTodos: 0,
+    doneTodos: 0
+  }
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Open Issues</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            47
+            {metrics.openIssues}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
               <IconTrendingUp />
-              +8
+              {metrics.openIssues > 0 ? `+${metrics.openIssues}` : '0'}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this week <IconTrendingUp className="size-4" />
+            Active bugs and todos <IconTrendingUp className="size-4" />
           </div>
         </CardFooter>
       </Card>
@@ -36,18 +64,18 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Ready for QA</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            12
+            {metrics.readyForQA}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
               <IconTrendingDown />
-              -3
+              {metrics.readyForQA > 0 ? `-${metrics.readyForQA}` : '0'}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Decreased this week <IconTrendingDown className="size-4" />
+            Items ready for testing <IconTrendingDown className="size-4" />
           </div>
         </CardFooter>
       </Card>
@@ -55,12 +83,12 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>MTTR (last 14d)</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            18h
+            {metrics.mttr}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
               <IconTrendingUp />
-              +2h
+              {metrics.mttr !== 'N/A' ? `+${metrics.mttr}` : 'N/A'}
             </Badge>
           </CardAction>
         </CardHeader>
@@ -74,12 +102,12 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Critical Open</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            3
+            {metrics.criticalOpen}
           </CardTitle>
           <CardAction>
             <Badge variant="destructive">
               <IconTrendingUp />
-              +1
+              {metrics.criticalOpen > 0 ? `+${metrics.criticalOpen}` : '0'}
             </Badge>
           </CardAction>
         </CardHeader>

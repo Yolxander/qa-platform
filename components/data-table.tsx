@@ -170,7 +170,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "header",
-    header: "Header",
+    header: "Title",
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />
     },
@@ -178,10 +178,15 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "type",
-    header: "Section Type",
+    header: "Severity",
     cell: ({ row }) => (
       <div className="w-32">
-        <Badge variant="outline" className="text-muted-foreground px-1.5">
+        <Badge 
+          variant={row.original.type === 'CRITICAL' ? 'destructive' : 
+                  row.original.type === 'HIGH' ? 'destructive' : 
+                  row.original.type === 'MEDIUM' ? 'secondary' : 'outline'} 
+          className="px-1.5"
+        >
           {row.original.type}
         </Badge>
       </div>
@@ -191,8 +196,13 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Done" ? (
+      <Badge 
+        variant={row.original.status === 'DONE' || row.original.status === 'Closed' ? 'default' : 
+                row.original.status === 'READY_FOR_QA' || row.original.status === 'Ready for QA' ? 'secondary' : 
+                row.original.status === 'IN_PROGRESS' || row.original.status === 'In Progress' ? 'outline' : 'destructive'} 
+        className="px-1.5"
+      >
+        {row.original.status === "DONE" || row.original.status === "Closed" ? (
           <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
         ) : (
           <IconLoader />
@@ -203,7 +213,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "target",
-    header: () => <div className="w-full text-right">Target</div>,
+    header: () => <div className="w-full text-right">Assignee</div>,
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -228,7 +238,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "limit",
-    header: () => <div className="w-full text-right">Limit</div>,
+    header: () => <div className="w-full text-right">Due Date</div>,
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -253,7 +263,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "reviewer",
-    header: "Reviewer",
+    header: "Reporter",
     cell: ({ row }) => {
       const isAssigned = row.original.reviewer !== "Assign reviewer"
 
@@ -364,13 +374,16 @@ export function DataTable({
   // Apply column filters based on active tab
   React.useEffect(() => {
     if (activeTab === "outline") {
-      setColumnFilters([])
+      // Ready for QA - filter by status
+      setColumnFilters([{ id: "status", value: "READY_FOR_QA" }])
     } else if (activeTab === "past-performance") {
+      // High Priority - filter by HIGH severity
       setColumnFilters([{ id: "type", value: "HIGH" }])
     } else if (activeTab === "key-personnel") {
+      // Critical Issues - filter by CRITICAL severity
       setColumnFilters([{ id: "type", value: "CRITICAL" }])
     } else if (activeTab === "focus-documents") {
-      // For recently updated, we'll sort the data instead of filtering
+      // Recently Updated - no filter, will sort by date
       setColumnFilters([])
     }
   }, [activeTab])
@@ -452,10 +465,10 @@ export function DataTable({
         <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
           <TabsTrigger value="outline">Ready for QA</TabsTrigger>
           <TabsTrigger value="past-performance">
-            High Priority <Badge variant="secondary">4</Badge>
+            High Priority
           </TabsTrigger>
           <TabsTrigger value="key-personnel">
-            Critical Issues <Badge variant="secondary">2</Badge>
+            Critical Issues
           </TabsTrigger>
           <TabsTrigger value="focus-documents">Recently Updated</TabsTrigger>
         </TabsList>
@@ -495,7 +508,7 @@ export function DataTable({
           </DropdownMenu>
           <Button variant="outline" size="sm">
             <IconPlus />
-            <span className="hidden lg:inline">Add Issue</span>
+            <span className="hidden lg:inline">Add Bug/Todo</span>
           </Button>
         </div>
       </div>
@@ -685,7 +698,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.header}</DrawerTitle>
           <DrawerDescription>
-            Showing total visitors for the last 6 months
+            {item.source === 'bug' ? 'Bug Details' : 'Todo Details'} - {item.type} severity
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
@@ -738,9 +751,8 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   <IconTrendingUp className="size-4" />
                 </div>
                 <div className="text-muted-foreground">
-                  Showing total visitors for the last 6 months. This is just
-                  some random text to test the layout. It spans multiple lines
-                  and should wrap around.
+                  Activity trends for this {item.source === 'bug' ? 'bug' : 'todo'} over the last 6 months. 
+                  Track progress and resolution patterns.
                 </div>
               </div>
               <Separator />
@@ -748,33 +760,21 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
+              <Label htmlFor="header">Title</Label>
               <Input id="header" defaultValue={item.header} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor="type">Severity</Label>
                 <Select defaultValue={item.type}>
                   <SelectTrigger id="type" className="w-full">
-                    <SelectValue placeholder="Select a type" />
+                    <SelectValue placeholder="Select severity" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Table of Contents">
-                      Table of Contents
-                    </SelectItem>
-                    <SelectItem value="Executive Summary">
-                      Executive Summary
-                    </SelectItem>
-                    <SelectItem value="Technical Approach">
-                      Technical Approach
-                    </SelectItem>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="Capabilities">Capabilities</SelectItem>
-                    <SelectItem value="Focus Documents">
-                      Focus Documents
-                    </SelectItem>
-                    <SelectItem value="Narrative">Narrative</SelectItem>
-                    <SelectItem value="Cover Page">Cover Page</SelectItem>
+                    <SelectItem value="CRITICAL">Critical</SelectItem>
+                    <SelectItem value="HIGH">High</SelectItem>
+                    <SelectItem value="MEDIUM">Medium</SelectItem>
+                    <SelectItem value="LOW">Low</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -782,31 +782,36 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 <Label htmlFor="status">Status</Label>
                 <Select defaultValue={item.status}>
                   <SelectTrigger id="status" className="w-full">
-                    <SelectValue placeholder="Select a status" />
+                    <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Done">Done</SelectItem>
+                    <SelectItem value="Open">Open</SelectItem>
                     <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
+                    <SelectItem value="Ready for QA">Ready for QA</SelectItem>
+                    <SelectItem value="Closed">Closed</SelectItem>
+                    <SelectItem value="OPEN">Open (Todo)</SelectItem>
+                    <SelectItem value="IN_PROGRESS">In Progress (Todo)</SelectItem>
+                    <SelectItem value="READY_FOR_QA">Ready for QA (Todo)</SelectItem>
+                    <SelectItem value="DONE">Done (Todo)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="target">Target</Label>
+                <Label htmlFor="target">Assignee</Label>
                 <Input id="target" defaultValue={item.target} />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Limit</Label>
+                <Label htmlFor="limit">Due Date</Label>
                 <Input id="limit" defaultValue={item.limit} />
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Reviewer</Label>
+              <Label htmlFor="reviewer">Reporter</Label>
               <Select defaultValue={item.reviewer}>
                 <SelectTrigger id="reviewer" className="w-full">
-                  <SelectValue placeholder="Select a reviewer" />
+                  <SelectValue placeholder="Select reporter" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>

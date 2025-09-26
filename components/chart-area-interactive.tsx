@@ -32,22 +32,15 @@ import {
 
 export const description = "An interactive area chart"
 
-const chartData = [
-  { date: "2024-01-01", opened: 12, closed: 8 },
-  { date: "2024-01-02", opened: 8, closed: 15 },
-  { date: "2024-01-03", opened: 15, closed: 12 },
-  { date: "2024-01-04", opened: 6, closed: 9 },
-  { date: "2024-01-05", opened: 11, closed: 14 },
-  { date: "2024-01-06", opened: 9, closed: 7 },
-  { date: "2024-01-07", opened: 13, closed: 16 },
-  { date: "2024-01-08", opened: 7, closed: 11 },
-  { date: "2024-01-09", opened: 14, closed: 10 },
-  { date: "2024-01-10", opened: 10, closed: 13 },
-  { date: "2024-01-11", opened: 16, closed: 8 },
-  { date: "2024-01-12", opened: 12, closed: 15 },
-  { date: "2024-01-13", opened: 8, closed: 12 },
-  { date: "2024-01-14", opened: 15, closed: 9 },
-]
+interface ChartData {
+  date: string
+  opened: number
+  closed: number
+}
+
+interface ChartAreaInteractiveProps {
+  data?: ChartData[]
+}
 
 const chartConfig = {
   opened: {
@@ -60,9 +53,12 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function ChartAreaInteractive() {
+export function ChartAreaInteractive({ data }: ChartAreaInteractiveProps) {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("14d")
+
+  // Use real data if available, otherwise show empty state
+  const chartData = data || []
 
   React.useEffect(() => {
     if (isMobile) {
@@ -72,7 +68,7 @@ export function ChartAreaInteractive() {
 
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date)
-    const referenceDate = new Date("2024-01-14")
+    const referenceDate = new Date() // Use current date instead of hardcoded date
     let daysToSubtract = 14
     if (timeRange === "7d") {
       daysToSubtract = 7
