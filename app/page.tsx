@@ -3,6 +3,7 @@ import FeaturesSection from '@/components/features-7'
 import ContentSection from '@/components/content-2'
 import IntegrationsSection from '@/components/integrations-8'
 import Pricing from '@/components/pricing'
+import TeamSection from '@/components/team'
 import FooterSection from '@/components/footer'
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
       <IntegrationsSection />
       <FeaturesSection />
       <Pricing />
+        <TeamSection />
       <FooterSection />
     </div>
   );
