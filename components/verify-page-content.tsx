@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { IconCheck, IconX, IconUpload, IconClipboardCheck, IconExternalLink, IconArrowLeft } from "@tabler/icons-react"
+import { IconCheck, IconX, IconUpload, IconClipboardCheck, IconExternalLink, IconArrowLeft, IconMessage, IconPhoto, IconUser, IconClock } from "@tabler/icons-react"
+import { supabase } from "@/lib/supabase"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -44,20 +45,10 @@ const getEnvironmentBadgeVariant = (environment: string) => {
   }
 }
 
-// Mock issue data - in a real app, this would be fetched based on issueId
-const mockIssue = {
-  id: 1,
-  title: "Fix login authentication bug",
-  severity: "CRITICAL" as const,
-  environment: "Prod" as const,
-  linkedPR: "#PR-123",
-  updatedAt: "2 hours ago",
-  assignee: "Sarah Chen",
-  description: "Users are unable to log in to the application due to authentication token validation issues. This affects all production users and prevents access to the main dashboard."
-}
-
 export function VerifyPageContent({ issueId }: VerifyPageContentProps) {
   const router = useRouter()
+  const [todo, setTodo] = React.useState<any>(null)
+  const [loading, setLoading] = React.useState(true)
   const [stepsToReproduce, setStepsToReproduce] = React.useState("")
   const [expectedResult, setExpectedResult] = React.useState("")
   const [actualResult, setActualResult] = React.useState("")
@@ -66,41 +57,113 @@ export function VerifyPageContent({ issueId }: VerifyPageContentProps) {
   const [screenshots, setScreenshots] = React.useState<string[]>([])
   const [showRegressionNote, setShowRegressionNote] = React.useState(false)
 
-  // In a real app, fetch issue data based on issueId
-  const issue = mockIssue
+  // Fetch todo data from database
+  const fetchTodoDetails = async () => {
+    try {
+      setLoading(true)
+      
+      if (!supabase) {
+        console.warn('Supabase not configured')
+        return
+      }
 
-  const handlePass = () => {
-    console.log("✅ PASS - Issue marked as Done", {
-      issueId: issue.id,
-      title: issue.title,
-      stepsToReproduce,
-      expectedResult,
-      actualResult,
-      fixNote,
-      screenshots
-    })
-    // Navigate back to QA queue
-    router.push("/ready-for-qa")
+      const { data, error } = await supabase
+        .from('todos')
+        .select('*')
+        .eq('id', issueId)
+        .single()
+
+      if (error) {
+        console.error('Error fetching todo details:', error)
+        return
+      }
+
+      if (data) {
+        setTodo(data)
+      }
+    } catch (error) {
+      console.error('Error fetching todo details:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleFail = () => {
+  React.useEffect(() => {
+    fetchTodoDetails()
+  }, [issueId])
+
+  const handlePass = async () => {
+    if (!todo || !supabase) return
+    
+    try {
+      // Update todo status to DONE
+      const { error } = await supabase
+        .from('todos')
+        .update({ 
+          status: 'DONE',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', todo.id)
+
+      if (error) {
+        console.error('Error updating todo status:', error)
+        return
+      }
+
+      console.log("✅ PASS - Todo marked as Done", {
+        todoId: todo.id,
+        title: todo.title,
+        stepsToReproduce,
+        expectedResult,
+        actualResult,
+        fixNote,
+        screenshots
+      })
+      // Navigate back to QA queue
+      router.push("/ready-for-qa")
+    } catch (error) {
+      console.error('Error updating todo:', error)
+    }
+  }
+
+  const handleFail = async () => {
+    if (!todo || !supabase) return
+    
     if (!showRegressionNote) {
       setShowRegressionNote(true)
       return
     }
     
-    console.log("❌ FAIL - Issue reopened to In Dev", {
-      issueId: issue.id,
-      title: issue.title,
-      stepsToReproduce,
-      expectedResult,
-      actualResult,
-      fixNote,
-      regressionNote,
-      screenshots
-    })
-    // Navigate back to QA queue
-    router.push("/ready-for-qa")
+    try {
+      // Update todo status back to IN_PROGRESS
+      const { error } = await supabase
+        .from('todos')
+        .update({ 
+          status: 'IN_PROGRESS',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', todo.id)
+
+      if (error) {
+        console.error('Error updating todo status:', error)
+        return
+      }
+
+      console.log("❌ FAIL - Todo reopened to In Progress", {
+        todoId: todo.id,
+        title: todo.title,
+        stepsToReproduce,
+        expectedResult,
+        actualResult,
+        fixNote,
+        regressionNote,
+        screenshots
+      })
+      // Navigate back to QA queue
+      router.push("/ready-for-qa")
+    } catch (error) {
+      console.error('Error updating todo:', error)
+    }
   }
 
   const handleScreenshotUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,10 +174,63 @@ export function VerifyPageContent({ issueId }: VerifyPageContentProps) {
     }
   }
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="px-4 lg:px-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/ready-for-qa")}
+            className="gap-2"
+          >
+            <IconArrowLeft className="size-4" />
+            Back to QA Queue
+          </Button>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading task details...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state if todo not found
+  if (!todo) {
+    return (
+      <div className="px-4 lg:px-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/ready-for-qa")}
+            className="gap-2"
+          >
+            <IconArrowLeft className="size-4" />
+            Back to QA Queue
+          </Button>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-2">Task Not Found</h2>
+            <p className="text-muted-foreground mb-4">The task you're looking for doesn't exist or has been deleted.</p>
+            <Button onClick={() => router.push("/ready-for-qa")}>
+              Return to QA Queue
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="px-4 lg:px-6 space-y-6">
+    <div className="px-4 lg:px-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 mb-6">
         <Button
           variant="outline"
           size="sm"
@@ -124,220 +240,231 @@ export function VerifyPageContent({ issueId }: VerifyPageContentProps) {
           <IconArrowLeft className="size-4" />
           Back to QA Queue
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <IconClipboardCheck className="size-6" />
-            Verifying {issue.title}
-          </h1>
-        </div>
       </div>
 
-      {/* Issue Summary Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Issue Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Title</Label>
-              <p className="text-sm">{issue.title}</p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Issue URL</Label>
+      {/* E-commerce Product Overview Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Section - Task Details */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* Task Header */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-mono">#{issue.id}</span>
-                <IconExternalLink className="size-3 text-muted-foreground" />
+                <Badge variant={getEnvironmentBadgeVariant(todo.environment)}>
+                  {todo.environment}
+                </Badge>
+                <Badge variant={getSeverityBadgeVariant(todo.severity)}>
+                  {todo.severity}
+                </Badge>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Severity</Label>
-              <Badge variant={getSeverityBadgeVariant(issue.severity)}>
-                {issue.severity}
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Environment</Label>
-              <Badge variant={getEnvironmentBadgeVariant(issue.environment)}>
-                {issue.environment}
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Assignee</Label>
-              <p className="text-sm">{issue.assignee}</p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Updated</Label>
-              <p className="text-sm text-muted-foreground">{issue.updatedAt}</p>
-            </div>
-          </div>
-          <div className="mt-4 space-y-2">
-            <Label className="text-sm font-medium">Description</Label>
-            <p className="text-sm text-muted-foreground">{issue.description}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Screenshots Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Screenshots</CardTitle>
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleScreenshotUpload}
-                className="hidden"
-                id="screenshot-upload"
-              />
-              <Label
-                htmlFor="screenshot-upload"
-                className="flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer hover:bg-accent"
-              >
-                <IconUpload className="size-4" />
-                Upload Screenshots
-              </Label>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {screenshots.map((screenshot, index) => (
-              <div key={index} className="relative group">
-                <img
-                  src={screenshot}
-                  alt={`Screenshot ${index + 1}`}
-                  className="w-full h-32 object-cover rounded-md border"
-                />
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => setScreenshots(prev => prev.filter((_, i) => i !== index))}
-                >
-                  <IconX className="size-3" />
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm">
+                  <IconClipboardCheck className="size-4" />
                 </Button>
               </div>
-            ))}
-            {screenshots.length === 0 && (
-              <div className="col-span-full flex items-center justify-center h-32 border-2 border-dashed rounded-md text-muted-foreground">
-                No screenshots uploaded
-              </div>
-            )}
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">{todo.title}</h1>
+            <p className="text-muted-foreground">Task #{todo.id}</p>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Steps to Reproduce Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Steps to Reproduce</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            placeholder="1. Go to...
+          {/* QA Verification Form */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>QA Verification</CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    variant="destructive"
+                    onClick={handleFail}
+                    className="gap-2"
+                  >
+                    <IconX className="size-4" />
+                    Fail
+                  </Button>
+                  <Button
+                    onClick={handlePass}
+                    className="gap-2"
+                  >
+                    <IconCheck className="size-4" />
+                    Pass
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Steps to Reproduce */}
+              <div className="space-y-2">
+                <Label htmlFor="steps">Steps to Reproduce</Label>
+                <Textarea
+                  id="steps"
+                  placeholder="1. Go to...
 2. Click on...
 3. Observe..."
-            value={stepsToReproduce}
-            onChange={(e) => setStepsToReproduce(e.target.value)}
-            className="min-h-[120px]"
-          />
-        </CardContent>
-      </Card>
+                  value={stepsToReproduce}
+                  onChange={(e) => setStepsToReproduce(e.target.value)}
+                  className="min-h-[120px]"
+                />
+              </div>
 
-      {/* Expected vs Actual Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Expected vs Actual</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="expected">Expected Result (from report)</Label>
-              <Textarea
-                id="expected"
-                placeholder="What should happen..."
-                value={expectedResult}
-                onChange={(e) => setExpectedResult(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="actual">Actual Result</Label>
-              <Textarea
-                id="actual"
-                placeholder="What actually happens..."
-                value={actualResult}
-                onChange={(e) => setActualResult(e.target.value)}
-                className="min-h-[100px]"
-              />
+              {/* Expected vs Actual */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="expected">Expected Result</Label>
+                  <Textarea
+                    id="expected"
+                    placeholder="What should happen..."
+                    value={expectedResult}
+                    onChange={(e) => setExpectedResult(e.target.value)}
+                    className="min-h-[120px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="actual">Actual Result</Label>
+                  <Textarea
+                    id="actual"
+                    placeholder="What actually happens..."
+                    value={actualResult}
+                    onChange={(e) => setActualResult(e.target.value)}
+                    className="min-h-[120px]"
+                  />
+                </div>
+              </div>
+
+              {/* Fix Note */}
+              <div className="space-y-2">
+                <Label htmlFor="fixNote">Fix Note (from dev)</Label>
+                <Textarea
+                  id="fixNote"
+                  placeholder="Developer's notes about the fix..."
+                  value={fixNote}
+                  onChange={(e) => setFixNote(e.target.value)}
+                  className="min-h-[120px]"
+                />
+              </div>
+
+              {/* Regression Note (shown when failing) */}
+              {showRegressionNote && (
+                <div className="space-y-2">
+                  <Label htmlFor="regressionNote" className="text-destructive">Regression Note Required</Label>
+                  <Textarea
+                    id="regressionNote"
+                    placeholder="Add regression note and screenshot..."
+                    value={regressionNote}
+                    onChange={(e) => setRegressionNote(e.target.value)}
+                    className="min-h-[120px] border-destructive"
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Section - Task Metadata & Screenshots/Visuals */}
+        <div className="space-y-6">
+          {/* Task Metadata */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Assignee:</span>
+                <span className="ml-2 font-medium">{todo.assignee || "Unassigned"}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Due Date:</span>
+                <span className="ml-2 font-medium">{todo.due_date}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Created:</span>
+                <span className="ml-2 font-medium">{new Date(todo.created_at).toLocaleDateString()}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Updated:</span>
+                <span className="ml-2 font-medium">{new Date(todo.updated_at).toLocaleDateString()}</span>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Fix Note Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Fix Note (from dev)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            placeholder="Developer's notes about the fix..."
-            value={fixNote}
-            onChange={(e) => setFixNote(e.target.value)}
-            className="min-h-[100px]"
-          />
-        </CardContent>
-      </Card>
+          {/* Issue Link */}
+          {todo.issue_link && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Related Issue</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono bg-muted px-3 py-2 rounded-md flex-1">
+                  {todo.issue_link}
+                </span>
+                <Button variant="outline" size="sm">
+                  <IconExternalLink className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
 
-      {/* Regression Note Card (shown when failing) */}
-      {showRegressionNote && (
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Regression Note Required</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Add regression note and screenshot..."
-              value={regressionNote}
-              onChange={(e) => setRegressionNote(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </CardContent>
-        </Card>
-      )}
+          {/* Screenshots Section */}
+          <div className="space-y-4">
+            {/* Main Screenshot */}
+            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+              {screenshots.length > 0 ? (
+                <img
+                  src={screenshots[0]}
+                  alt="Main verification screenshot"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                  <div className="text-center text-gray-500">
+                    <IconPhoto className="size-12 mx-auto mb-2" />
+                    <p>No screenshots uploaded</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
-      {/* Actions */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-end gap-4">
-            <Button
-              variant="outline"
-              onClick={() => router.push("/ready-for-qa")}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleFail}
-              className="gap-2"
-            >
-              <IconX className="size-4" />
-              Fail
-            </Button>
-            <Button
-              onClick={handlePass}
-              className="gap-2"
-            >
-              <IconCheck className="size-4" />
-              Pass
-            </Button>
+            {/* Thumbnail Screenshots */}
+            {screenshots.length > 1 && (
+              <div className="grid grid-cols-2 gap-2">
+                {screenshots.slice(1, 5).map((screenshot, index) => (
+                  <div key={index} className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
+                    <img
+                      src={screenshot}
+                      alt={`Screenshot ${index + 2}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload Screenshots */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconUpload className="size-5" />
+                  Upload Screenshots
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleScreenshotUpload}
+                  className="hidden"
+                  id="screenshot-upload"
+                />
+                <Label
+                  htmlFor="screenshot-upload"
+                  className="flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer hover:bg-accent"
+                >
+                  <IconUpload className="size-4" />
+                  Choose Screenshots
+                </Label>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Upload screenshots to document your verification process
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

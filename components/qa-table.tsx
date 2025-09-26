@@ -58,10 +58,10 @@ interface QAItem {
   title: string
   severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
   environment: "Prod" | "Stage" | "Dev"
-  linkedPR?: string
+  issueLink?: string
   updatedAt: string
   assignee: string
-  action: "Verify"
+  dueDate: string
 }
 
 const getSeverityBadgeVariant = (severity: string) => {
@@ -95,15 +95,21 @@ const getEnvironmentBadgeVariant = (environment: string) => {
 const columns: ColumnDef<QAItem>[] = [
   {
     accessorKey: "title",
-    header: "Issue Title",
+    header: "Task Title",
     cell: ({ row }) => (
       <div className="flex flex-col">
-        <button 
-          className="text-left font-medium hover:text-primary hover:underline"
-          onClick={() => console.log(`Opening issue detail for: ${row.original.title}`)}
-        >
-          {row.original.title}
-        </button>
+        <span className="font-medium">{row.original.title}</span>
+        {row.original.issueLink && (
+          <a 
+            href={row.original.issueLink.startsWith('bug-') 
+              ? `/bug/${row.original.issueLink.replace('bug-', '')}` 
+              : `/bug/${row.original.id}`
+            }
+            className="text-sm text-primary hover:underline"
+          >
+            {row.original.issueLink}
+          </a>
+        )}
       </div>
     ),
   },
@@ -126,19 +132,19 @@ const columns: ColumnDef<QAItem>[] = [
     ),
   },
   {
-    accessorKey: "linkedPR",
-    header: "Linked PR/Commit",
+    accessorKey: "dueDate",
+    header: "Due Date",
     cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        {row.original.linkedPR ? (
-          <>
-            <span className="text-sm font-mono">{row.original.linkedPR}</span>
-            <IconExternalLink className="size-3 text-muted-foreground" />
-          </>
-        ) : (
-          <span className="text-sm text-muted-foreground">-</span>
-        )}
-      </div>
+      <span className="text-sm font-medium">{row.original.dueDate}</span>
+    ),
+  },
+  {
+    accessorKey: "assignee",
+    header: "Assignee",
+    cell: ({ row }) => (
+      <span className={`text-sm ${!row.original.assignee || row.original.assignee === "Unassigned" ? "text-muted-foreground italic" : ""}`}>
+        {row.original.assignee || "Unassigned"}
+      </span>
     ),
   },
   {
@@ -149,16 +155,7 @@ const columns: ColumnDef<QAItem>[] = [
     ),
   },
   {
-    accessorKey: "assignee",
-    header: "Assignee",
-    cell: ({ row }) => (
-      <span className={`text-sm ${row.original.assignee === "Unassigned" ? "text-muted-foreground italic" : ""}`}>
-        {row.original.assignee}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "action",
+    id: "action",
     header: "Action",
     cell: ({ row }) => {
       return (
@@ -168,7 +165,7 @@ const columns: ColumnDef<QAItem>[] = [
           onClick={() => window.location.href = `/verify/${row.original.id}`}
         >
           <IconCheck className="size-4" />
-          {row.original.action}
+          Verify
         </Button>
       )
     },
@@ -280,8 +277,8 @@ export function QATable({ data }: { data: QAItem[] }) {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="updatedAt">Newest</SelectItem>
-              <SelectItem value="updatedAt">Oldest</SelectItem>
+              <SelectItem value="dueDate">Due Date</SelectItem>
+              <SelectItem value="updatedAt">Updated</SelectItem>
               <SelectItem value="severity">Severity</SelectItem>
             </SelectContent>
           </Select>
@@ -289,7 +286,7 @@ export function QATable({ data }: { data: QAItem[] }) {
 
         <div className="flex items-center space-x-2">
           <Input
-            placeholder="Search issues..."
+            placeholder="Search tasks..."
             value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
               table.getColumn("title")?.setFilterValue(event.target.value)
@@ -343,7 +340,7 @@ export function QATable({ data }: { data: QAItem[] }) {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No issues found.
+                  No tasks ready for QA.
                 </TableCell>
               </TableRow>
             )}
