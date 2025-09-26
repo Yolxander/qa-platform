@@ -56,6 +56,7 @@ export function VerifyPageContent({ issueId }: VerifyPageContentProps) {
   const [regressionNote, setRegressionNote] = React.useState("")
   const [screenshots, setScreenshots] = React.useState<string[]>([])
   const [showRegressionNote, setShowRegressionNote] = React.useState(false)
+  const [assigneeName, setAssigneeName] = React.useState<string>("")
 
   // Fetch todo data from database
   const fetchTodoDetails = async () => {
@@ -80,6 +81,26 @@ export function VerifyPageContent({ issueId }: VerifyPageContentProps) {
 
       if (data) {
         setTodo(data)
+        
+        // Get assignee display name using the database function
+        if (data.assignee) {
+          try {
+            const { data: assigneeData, error: assigneeError } = await supabase
+              .rpc('get_assignee_display_name', { user_id: data.assignee })
+            
+            if (!assigneeError && assigneeData) {
+              setAssigneeName(assigneeData)
+            } else {
+              console.error('Error fetching assignee name:', assigneeError)
+              setAssigneeName("Unknown User")
+            }
+          } catch (error) {
+            console.error('Error fetching assignee name:', error)
+            setAssigneeName("Unknown User")
+          }
+        } else {
+          setAssigneeName("Unassigned")
+        }
       }
     } catch (error) {
       console.error('Error fetching todo details:', error)
@@ -366,19 +387,33 @@ export function VerifyPageContent({ issueId }: VerifyPageContentProps) {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Assignee:</span>
-                <span className="ml-2 font-medium">{todo.assignee || "Unassigned"}</span>
+                <span className="ml-2 font-medium">{assigneeName}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Due Date:</span>
-                <span className="ml-2 font-medium">{todo.due_date}</span>
+                <span className="ml-2 font-medium">
+                  {todo.due_date ? new Date(todo.due_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  }) : 'No due date'}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Created:</span>
-                <span className="ml-2 font-medium">{new Date(todo.created_at).toLocaleDateString()}</span>
+                <span className="ml-2 font-medium">{new Date(todo.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Updated:</span>
-                <span className="ml-2 font-medium">{new Date(todo.updated_at).toLocaleDateString()}</span>
+                <span className="ml-2 font-medium">{new Date(todo.updated_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}</span>
               </div>
             </div>
           </div>

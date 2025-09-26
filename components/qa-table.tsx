@@ -60,7 +60,7 @@ interface QAItem {
   environment: "Prod" | "Stage" | "Dev"
   issueLink?: string
   updatedAt: string
-  assignee: string
+  assignee_name: string
   dueDate: string
 }
 
@@ -139,11 +139,11 @@ const columns: ColumnDef<QAItem>[] = [
     ),
   },
   {
-    accessorKey: "assignee",
+    accessorKey: "assignee_name",
     header: "Assignee",
     cell: ({ row }) => (
-      <span className={`text-sm ${!row.original.assignee || row.original.assignee === "Unassigned" ? "text-muted-foreground italic" : ""}`}>
-        {row.original.assignee || "Unassigned"}
+      <span className={`text-sm ${!row.original.assignee_name || row.original.assignee_name === "Unassigned" ? "text-muted-foreground italic" : ""}`}>
+        {row.original.assignee_name || "Unassigned"}
       </span>
     ),
   },
@@ -250,9 +250,9 @@ export function QATable({ data }: { data: QAItem[] }) {
 
           <Label htmlFor="assignee-filter">Assignee:</Label>
           <Select
-            value={(table.getColumn("assignee")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn("assignee_name")?.getFilterValue() as string) ?? ""}
             onValueChange={(value) =>
-              table.getColumn("assignee")?.setFilterValue(value === "all" ? "" : value)
+              table.getColumn("assignee_name")?.setFilterValue(value === "all" ? "" : value)
             }
           >
             <SelectTrigger className="h-8 w-[120px]">

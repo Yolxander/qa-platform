@@ -47,7 +47,7 @@ export default function Page() {
 
       // Show todos where user is either the creator (user_id) or assignee
       let query = supabase
-        .from('todos')
+        .from('todos_with_assignee_names')
         .select('*')
         .eq('project_id', currentProject.id);
 

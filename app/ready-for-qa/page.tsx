@@ -37,7 +37,7 @@ export default function Page() {
 
       // Show todos with READY_FOR_QA status where user is either the creator or assignee
       let query = supabase
-        .from('todos')
+        .from('todos_with_assignee_names')
         .select('*')
         .eq('project_id', currentProject.id)
         .eq('status', 'READY_FOR_QA')
@@ -70,9 +70,17 @@ export default function Page() {
     severity: todo.severity,
     environment: todo.environment,
     issueLink: todo.issue_link || "",
-    updatedAt: new Date(todo.updated_at).toLocaleDateString(),
-    assignee: todo.assignee,
-    dueDate: todo.due_date
+    updatedAt: new Date(todo.updated_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }),
+    assignee_name: todo.assignee_name,
+    dueDate: todo.due_date ? new Date(todo.due_date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }) : 'No due date'
   }))
 
   return (
