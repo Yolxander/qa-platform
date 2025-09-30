@@ -114,6 +114,7 @@ export default function Page() {
     }) : 'No due date',
     environment: todo.environment,
     assignee: todo.assignee_name,
+    assignee_name: todo.assignee_name,
     quickAction: todo.quick_action
   }));
 

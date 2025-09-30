@@ -53,7 +53,8 @@ export interface Todo {
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
   due_date: string
   environment: 'Prod' | 'Stage' | 'Dev'
-  assignee: string
+  assignee: string | null
+  assignee_name: string
   quick_action: string
   created_at: string
   updated_at: string

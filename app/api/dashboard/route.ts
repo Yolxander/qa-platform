@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     // Build the base query for todos
     let todosQuery = supabase
-      .from('todos')
+      .from('todos_with_assignee_names')
       .select('*')
       .eq('user_id', user.id)
 
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
         header: todo.title,
         type: todo.severity,
         status: todo.status,
-        target: todo.assignee,
+        target: todo.assignee_name,
         limit: todo.due_date,
         reviewer: 'Assign reviewer',
         source: 'todo'

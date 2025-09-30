@@ -69,6 +69,7 @@ interface TodoItem {
   dueDate: string
   environment: "Prod" | "Stage" | "Dev"
   assignee: string
+  assignee_name: string
   quickAction: "Start" | "Mark Done" | "Send to QA" | "Reopen"
 }
 

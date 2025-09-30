@@ -13,7 +13,7 @@ export async function GET(
     }
 
     const { data, error } = await supabase
-      .from('todos')
+      .from('todos_with_assignee_names')
       .select('*')
       .eq('id', id)
       .single()
