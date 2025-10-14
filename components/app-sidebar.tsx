@@ -439,23 +439,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         </TooltipContent>
                       </Tooltip>
                     ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <SidebarMenuButton 
-                            isActive={isActive}
-                            className={isActive ? "bg-accent text-accent-foreground" : ""}
-                            asChild
-                          >
-                            <Link href={item.url}>
-                              {item.icon && <item.icon />}
-                              <span>{item.title}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{item.title}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <SidebarMenuButton 
+                        isActive={isActive}
+                        className={isActive ? "bg-accent text-accent-foreground" : ""}
+                        asChild
+                      >
+                        <Link href={item.url}>
+                          {item.icon && <item.icon />}
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
                     )}
                   </SidebarMenuItem>
                 )
@@ -489,21 +482,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         </TooltipContent>
                       </Tooltip>
                     ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <SidebarMenuButton 
-                            onClick={() => handleProFeatureClick(item.title)}
-                            className="cursor-pointer hover:bg-accent/50"
-                          >
-                            {item.icon && <item.icon />}
-                            <span>{item.title}</span>
-                            <IconLock className="ml-auto size-4 text-amber-500" />
-                          </SidebarMenuButton>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{item.title}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <SidebarMenuButton 
+                        onClick={() => handleProFeatureClick(item.title)}
+                        className="cursor-pointer hover:bg-accent/50"
+                      >
+                        {item.icon && <item.icon />}
+                        <span>{item.title}</span>
+                        <IconLock className="ml-auto size-4 text-amber-500" />
+                      </SidebarMenuButton>
                     )}
                   </SidebarMenuItem>
                 )
