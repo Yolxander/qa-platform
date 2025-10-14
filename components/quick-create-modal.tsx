@@ -31,6 +31,8 @@ import { QuickAddForm } from "@/components/quick-add-form"
 import { AssignTasksForm } from "@/components/assign-tasks-form"
 import { NewBugForm } from "@/components/new-bug-form"
 import { NewTeamForm } from "@/components/new-team-form"
+import { NewProjectForm } from "@/components/new-project-form"
+import { AddTeamMemberForm } from "@/components/add-team-member-form"
 
 interface QuickActionOption {
   title: string
@@ -40,35 +42,91 @@ interface QuickActionOption {
   component?: React.ComponentType<any>
 }
 
-const getPageActions = (pathname: string): QuickActionOption[] => {
+const getPageActions = (pathname: string, userRole?: string): QuickActionOption[] => {
+  console.log('QuickCreateModal getPageActions called with:', { pathname, userRole })
+  
   switch (pathname) {
     case "/dashboard":
-      return [
-        {
-          title: "Create QA",
-          description: "Add a new QA item to the queue",
-          icon: IconFileText,
-          action: () => console.log("Create QA clicked"),
-        },
-        {
-          title: "Add Project",
-          description: "Create a new project",
-          icon: IconFolder,
-          action: () => console.log("Add Project clicked"),
-        },
-        {
-          title: "Report Bug",
-          description: "Submit a bug report",
-          icon: IconBug,
-          action: () => console.log("Report Bug clicked"),
-        },
-        {
-          title: "Add Team Member",
-          description: "Invite a new team member",
-          icon: IconUser,
-          action: () => console.log("Add Team Member clicked"),
-        },
-      ]
+      const actions: QuickActionOption[] = []
+      
+      // Role-based action filtering
+      console.log('QuickCreateModal: Filtering actions for role:', userRole)
+      if (userRole === 'owner') {
+        console.log('QuickCreateModal: Adding owner actions')
+        // Owner: Create project, report bug, create QA, add team member
+        actions.push(
+          {
+            title: "Add Project",
+            description: "Create a new project",
+            icon: IconFolder,
+            action: () => console.log("Add Project clicked"),
+            component: NewProjectForm,
+          },
+          {
+            title: "Create QA",
+            description: "Add a new QA item to the queue",
+            icon: IconFileText,
+            action: () => console.log("Create QA clicked"),
+            component: NewTodoForm,
+          },
+          {
+            title: "Report Bug",
+            description: "Submit a bug report",
+            icon: IconBug,
+            action: () => console.log("Report Bug clicked"),
+            component: NewBugForm,
+          },
+          {
+            title: "Add Team Member",
+            description: "Invite a new team member",
+            icon: IconUser,
+            action: () => console.log("Add Team Member clicked"),
+            component: AddTeamMemberForm,
+          }
+        )
+      } else if (userRole === 'developer' || userRole === 'tester') {
+        console.log('QuickCreateModal: Adding developer/tester actions')
+        // Developer/Tester: Create QA, report bug, add team member
+        actions.push(
+          {
+            title: "Create QA",
+            description: "Add a new QA item to the queue",
+            icon: IconFileText,
+            action: () => console.log("Create QA clicked"),
+            component: NewTodoForm,
+          },
+          {
+            title: "Report Bug",
+            description: "Submit a bug report",
+            icon: IconBug,
+            action: () => console.log("Report Bug clicked"),
+            component: NewBugForm,
+          },
+          {
+            title: "Add Team Member",
+            description: "Invite a new team member",
+            icon: IconUser,
+            action: () => console.log("Add Team Member clicked"),
+            component: AddTeamMemberForm,
+          }
+        )
+      } else {
+        console.log('QuickCreateModal: Adding guest actions (fallback)')
+        // Guest: Only report bug
+        actions.push(
+          {
+            title: "Report Bug",
+            description: "Submit a bug report",
+            icon: IconBug,
+            action: () => console.log("Report Bug clicked"),
+            component: NewBugForm,
+          }
+        )
+      }
+      
+      console.log('QuickCreateModal: Returning actions:', actions.map(a => a.title))
+      console.log('QuickCreateModal: Final role check - userRole:', userRole, 'typeof:', typeof userRole)
+      return actions
     
     case "/bugs":
       return [
@@ -254,16 +312,18 @@ const getPageActions = (pathname: string): QuickActionOption[] => {
 
 interface QuickCreateModalProps {
   children: React.ReactNode
+  userRole?: string
   onTodoCreated?: () => void
   onTasksAssigned?: () => void
   onBugCreated?: () => void
   onTeamCreated?: () => void
+  onProjectCreated?: () => void
 }
 
-export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned, onBugCreated, onTeamCreated }: QuickCreateModalProps) {
+export function QuickCreateModal({ children, userRole, onTodoCreated, onTasksAssigned, onBugCreated, onTeamCreated, onProjectCreated }: QuickCreateModalProps) {
   const [open, setOpen] = React.useState(false)
   const pathname = usePathname()
-  const quickActionOptions = getPageActions(pathname)
+  const quickActionOptions = getPageActions(pathname, userRole)
 
   const handleOptionClick = (action: () => void) => {
     action()
@@ -344,6 +404,7 @@ export function QuickCreateModal({ children, onTodoCreated, onTasksAssigned, onB
                   onTasksAssigned={onTasksAssigned}
                   onBugCreated={onBugCreated || (() => window.location.reload())}
                   onTeamCreated={onTeamCreated}
+                  onProjectCreated={onProjectCreated}
                 >
                   <Button
                     variant="outline"

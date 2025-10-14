@@ -48,10 +48,12 @@ interface DashboardData {
 }
 
 export default function Page() {
-  const { projects, loading, user } = useAuth()
+  const { projects, loading, user, currentProject } = useAuth()
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [dashboardLoading, setDashboardLoading] = useState(true)
   const [dashboardError, setDashboardError] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string>('guest')
+  const [roleLoading, setRoleLoading] = useState(true)
 
   // Fetch dashboard data
   useEffect(() => {
@@ -92,8 +94,67 @@ export default function Page() {
     fetchDashboardData()
   }, [user])
 
+  // Fetch user role for current project
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user || !currentProject) {
+        setUserRole('guest')
+        setRoleLoading(false)
+        return
+      }
+
+      try {
+        setRoleLoading(true)
+        
+        // Check if user is the project owner
+        if (currentProject.user_id === user.id) {
+          console.log('Dashboard: User is project owner, setting role to owner')
+          setUserRole('owner')
+          setRoleLoading(false)
+          return
+        }
+
+        // Get user's role from team_members table for current project
+        const { data: memberTeams, error } = await supabase
+          .rpc('get_member_teams', { user_profile_id: user.id })
+
+        if (error) {
+          console.error('Error fetching user role:', error)
+          setUserRole('guest')
+          return
+        }
+
+        // Find the team for the current project
+        const currentProjectTeam = memberTeams?.find(team => team.project_id === currentProject.id)
+        
+        console.log('Dashboard role detection:', {
+          currentProjectId: currentProject.id,
+          memberTeams,
+          currentProjectTeam,
+          detectedRole: currentProjectTeam?.role || 'guest'
+        })
+        
+        if (currentProjectTeam) {
+          console.log('Dashboard: Found team role:', currentProjectTeam.role)
+          setUserRole(currentProjectTeam.role || 'guest')
+        } else {
+          // If no team found for this project, default to guest
+          console.log('Dashboard: No team found, defaulting to guest')
+          setUserRole('guest')
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error)
+        setUserRole('guest')
+      } finally {
+        setRoleLoading(false)
+      }
+    }
+
+    fetchUserRole()
+  }, [user, currentProject])
+
   // Show loading state
-  if (loading || dashboardLoading) {
+  if (loading || dashboardLoading || roleLoading) {
     return (
       <ProtectedRoute>
         <SidebarProvider
@@ -199,6 +260,17 @@ export default function Page() {
           <div className="flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col gap-2">
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <div className="px-4 lg:px-6">
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+                    <p className="text-muted-foreground">
+                      {currentProject ? 
+                        `Overview for ${currentProject.name}` : 
+                        'Your project overview'
+                      }
+                    </p>
+                  </div>
+                </div>
                 <SectionCards data={dashboardData?.metrics} />
                 <div className="px-4 lg:px-6">
                   <ChartAreaInteractive data={dashboardData?.chartData} />

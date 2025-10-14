@@ -8,7 +8,9 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { QuickCreateModal } from "@/components/quick-create-modal"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useAuth } from "@/contexts/AuthContext"
 import { supabase } from "@/lib/supabase"
+import { IconPlus } from "@tabler/icons-react"
 
 const getSeverityBadgeVariant = (severity: string) => {
   switch (severity) {
@@ -38,7 +40,10 @@ const getStatusBadgeVariant = (status: string) => {
 
 export function SiteHeader() {
   const pathname = usePathname()
+  const { user, currentProject } = useAuth()
   const [bugData, setBugData] = useState<{ severity: string; status: string } | null>(null)
+  const [userRole, setUserRole] = useState<string>('guest')
+  const [roleLoading, setRoleLoading] = useState(true)
   
   const getPageTitle = () => {
     switch (pathname) {
@@ -94,6 +99,65 @@ export function SiteHeader() {
     fetchBugData()
   }, [pathname])
 
+  // Fetch user role for current project
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user || !currentProject) {
+        setUserRole('guest')
+        setRoleLoading(false)
+        return
+      }
+
+      try {
+        setRoleLoading(true)
+        
+        // Check if user is the project owner
+        if (currentProject.user_id === user.id) {
+          console.log('SiteHeader: User is project owner, setting role to owner')
+          setUserRole('owner')
+          setRoleLoading(false)
+          return
+        }
+
+        // Get user's role from team_members table for current project
+        const { data: memberTeams, error } = await supabase
+          .rpc('get_member_teams', { user_profile_id: user.id })
+
+        if (error) {
+          console.error('Error fetching user role:', error)
+          setUserRole('guest')
+          return
+        }
+
+        // Find the team for the current project
+        const currentProjectTeam = memberTeams?.find(team => team.project_id === currentProject.id)
+        
+        console.log('SiteHeader role detection:', {
+          currentProjectId: currentProject.id,
+          memberTeams,
+          currentProjectTeam,
+          detectedRole: currentProjectTeam?.role || 'guest'
+        })
+        
+        if (currentProjectTeam) {
+          console.log('SiteHeader: Found team role:', currentProjectTeam.role)
+          setUserRole(currentProjectTeam.role || 'guest')
+        } else {
+          // If no team found for this project, default to guest
+          console.log('SiteHeader: No team found, defaulting to guest')
+          setUserRole('guest')
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error)
+        setUserRole('guest')
+      } finally {
+        setRoleLoading(false)
+      }
+    }
+
+    fetchUserRole()
+  }, [user, currentProject])
+
   // Display bug badges with real data
   const getBugBadges = () => {
     if (pathname.startsWith("/bug/") && bugData) {
@@ -123,9 +187,10 @@ export function SiteHeader() {
           {getBugBadges()}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <QuickCreateModal>
-            <Button variant="ghost" size="sm" className="hidden sm:flex dark:text-foreground">
-              Quick Action
+          <QuickCreateModal userRole={userRole}>
+            <Button className="hidden sm:flex" onClick={() => console.log('SiteHeader: Button clicked, userRole:', userRole)}>
+              <IconPlus className="size-4 mr-2" />
+              Quick Actions ({userRole})
             </Button>
           </QuickCreateModal>
           <ThemeToggle />
