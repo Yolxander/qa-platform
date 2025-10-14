@@ -402,23 +402,10 @@ export function DataTable({
     } else if (activeTab === "outline") {
       // Ready for QA - filter by status (both bugs and todos)
       setColumnFilters([{ id: "status", value: "READY_FOR_QA" }])
-    } else if (activeTab === "past-performance") {
-      // High Priority - filter by HIGH severity
-      setColumnFilters([{ id: "type", value: "HIGH" }])
-    } else if (activeTab === "key-personnel") {
-      // Critical Issues - filter by CRITICAL severity
-      setColumnFilters([{ id: "type", value: "CRITICAL" }])
-    } else if (activeTab === "focus-documents") {
-      // Recently Updated - no filter, will sort by date
-      setColumnFilters([])
     }
   }, [activeTab])
 
   const sortedData = React.useMemo(() => {
-    if (activeTab === "focus-documents") {
-      // Sort by most recent updates (due_date field contains timestamp)
-      return [...data].sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime()).slice(0, 5)
-    }
     return data
   }, [data, activeTab])
 
@@ -484,56 +471,13 @@ export function DataTable({
           <SelectContent>
             <SelectItem value="all-items">All Items</SelectItem>
             <SelectItem value="outline">Ready for QA</SelectItem>
-            <SelectItem value="past-performance">High Priority</SelectItem>
-            <SelectItem value="key-personnel">Critical Issues</SelectItem>
-            <SelectItem value="focus-documents">Recently Updated</SelectItem>
           </SelectContent>
         </Select>
         <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
           <TabsTrigger value="all-items">All Items</TabsTrigger>
           <TabsTrigger value="outline">Ready for QA</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            High Priority
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Critical Issues
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Recently Updated</TabsTrigger>
         </TabsList>
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <IconLayoutColumns />
-                <span className="hidden lg:inline">Customize Columns</span>
-                <span className="lg:hidden">Columns</span>
-                <IconChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
-                )
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
           <Button variant="outline" size="sm">
             <IconPlus />
             <span className="hidden lg:inline">Add Bug/Todo</span>
@@ -805,21 +749,6 @@ export function DataTable({
             </div>
           </div>
         </div>
-      </TabsContent>
-      <TabsContent
-        value="past-performance"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent
-        value="focus-documents"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
       </TabsContent>
     </Tabs>
   )
