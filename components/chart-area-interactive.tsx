@@ -40,6 +40,7 @@ interface ChartData {
 
 interface ChartAreaInteractiveProps {
   data?: ChartData[]
+  isAllProjects?: boolean
 }
 
 const chartConfig = {
@@ -53,7 +54,18 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function ChartAreaInteractive({ data }: ChartAreaInteractiveProps) {
+const allProjectsChartConfig = {
+  opened: {
+    label: "New Items",
+    color: "var(--destructive)",
+  },
+  closed: {
+    label: "Completed",
+    color: "var(--chart-1)",
+  },
+} satisfies ChartConfig
+
+export function ChartAreaInteractive({ data, isAllProjects = false }: ChartAreaInteractiveProps) {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("14d")
 
@@ -81,12 +93,22 @@ export function ChartAreaInteractive({ data }: ChartAreaInteractiveProps) {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Opened vs Closed (Last 14 Days)</CardTitle>
+        <CardTitle>
+          {isAllProjects 
+            ? "Activity Across All Projects (Last 14 Days)" 
+            : "Opened vs Closed (Last 14 Days)"
+          }
+        </CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Track if team is burning down the queue
+            {isAllProjects 
+              ? "Track activity trends across all your projects" 
+              : "Track if team is burning down the queue"
+            }
           </span>
-          <span className="@[540px]/card:hidden">Last 14 days</span>
+          <span className="@[540px]/card:hidden">
+            {isAllProjects ? "All Projects Activity" : "Last 14 days"}
+          </span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
@@ -120,7 +142,7 @@ export function ChartAreaInteractive({ data }: ChartAreaInteractiveProps) {
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer
-          config={chartConfig}
+          config={isAllProjects ? allProjectsChartConfig : chartConfig}
           className="aspect-auto h-[250px] w-full"
         >
           <AreaChart data={filteredData}>

@@ -150,23 +150,38 @@ BEGIN
         )
     ) INTO metrics;
 
-    -- Generate chart data (last 14 days)
+    -- Generate chart data (last 14 days) - combine bugs and todos for All Projects mode
     WITH chart_data_raw AS (
         SELECT 
             date_trunc('day', (value->>'created_at')::timestamp) as date,
-            COUNT(*) as opened
-        FROM json_array_elements(bugs_data)
+            COUNT(*) as opened,
+            COUNT(CASE WHEN (value->>'status') IN ('Closed', 'DONE') THEN 1 END) as closed
+        FROM (
+            SELECT value FROM json_array_elements(bugs_data)
+            UNION ALL
+            SELECT value FROM json_array_elements(todos_data)
+        ) combined_items
         WHERE (value->>'created_at')::timestamp >= NOW() - INTERVAL '14 days'
         GROUP BY date_trunc('day', (value->>'created_at')::timestamp)
+    ),
+    -- Generate all dates for the last 14 days to ensure we have data points
+    date_series AS (
+        SELECT generate_series(
+            date_trunc('day', NOW() - INTERVAL '13 days'),
+            date_trunc('day', NOW()),
+            INTERVAL '1 day'
+        )::date as date
     )
     SELECT json_agg(
         json_build_object(
-            'date', date::text,
-            'opened', opened,
-            'closed', 0 -- Simplified for now
+            'date', ds.date::text,
+            'opened', COALESCE(cdr.opened, 0),
+            'closed', COALESCE(cdr.closed, 0)
         )
+        ORDER BY ds.date
     ) INTO chart_data
-    FROM chart_data_raw;
+    FROM date_series ds
+    LEFT JOIN chart_data_raw cdr ON ds.date = cdr.date;
 
     -- Generate table data (combining bugs and todos)
     WITH combined_data AS (

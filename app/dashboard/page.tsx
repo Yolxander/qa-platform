@@ -39,7 +39,7 @@ interface DashboardData {
     type: string
     status: string
     target: string
-    limit: string
+    due_date: string
     reviewer: string
     source: string
     project?: string
@@ -92,6 +92,8 @@ export default function Page() {
 
         const data = await response.json()
         console.log('Dashboard - Received data:', data)
+        console.log('Dashboard - Table data length:', data.tableData?.length || 0)
+        console.log('Dashboard - Sample table data:', data.tableData?.slice(0, 2))
         setDashboardData(data)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
@@ -298,9 +300,15 @@ export default function Page() {
                 </div>
                 <SectionCards data={dashboardData?.metrics} />
                 <div className="px-4 lg:px-6">
-                  <ChartAreaInteractive data={dashboardData?.chartData} />
+                  <ChartAreaInteractive 
+                    data={dashboardData?.chartData} 
+                    isAllProjects={currentProject === ALL_PROJECTS_MARKER}
+                  />
                 </div>
-                <DataTable data={dashboardData?.tableData || []} />
+                <DataTable 
+                  data={dashboardData?.tableData || []} 
+                  isAllProjects={currentProject === ALL_PROJECTS_MARKER}
+                />
               </div>
             </div>
           </div>

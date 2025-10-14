@@ -112,8 +112,9 @@ export const schema = z.object({
   type: z.string(),
   status: z.string(),
   target: z.string(),
-  limit: z.string(),
+  due_date: z.string(),
   reviewer: z.string(),
+  source: z.string(),
   project: z.string().optional(),
 })
 
@@ -238,7 +239,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
   },
   {
-    accessorKey: "limit",
+    accessorKey: "due_date",
     header: () => <div className="w-full text-right">Due Date</div>,
     cell: ({ row }) => (
       <form
@@ -251,13 +252,13 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
           })
         }}
       >
-        <Label htmlFor={`${row.original.id}-limit`} className="sr-only">
-          Limit
+        <Label htmlFor={`${row.original.id}-due_date`} className="sr-only">
+          Due Date
         </Label>
         <Input
           className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={row.original.limit}
-          id={`${row.original.id}-limit`}
+          defaultValue={row.original.due_date}
+          id={`${row.original.id}-due_date`}
         />
       </form>
     ),
@@ -366,13 +367,17 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 
 export function DataTable({
   data: initialData,
+  isAllProjects = false,
 }: {
   data: z.infer<typeof schema>[]
+  isAllProjects?: boolean
 }) {
   const [data, setData] = React.useState(() => initialData)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
+    React.useState<VisibilityState>({
+      project: isAllProjects, // Hide project column by default unless in All Projects mode
+    })
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   )
@@ -381,7 +386,7 @@ export function DataTable({
     pageIndex: 0,
     pageSize: 10,
   })
-  const [activeTab, setActiveTab] = React.useState("outline")
+  const [activeTab, setActiveTab] = React.useState("all-items")
   const sortableId = React.useId()
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -391,8 +396,11 @@ export function DataTable({
 
   // Apply column filters based on active tab
   React.useEffect(() => {
-    if (activeTab === "outline") {
-      // Ready for QA - filter by status
+    if (activeTab === "all-items") {
+      // All Items - no filters, show everything
+      setColumnFilters([])
+    } else if (activeTab === "outline") {
+      // Ready for QA - filter by status (both bugs and todos)
       setColumnFilters([{ id: "status", value: "READY_FOR_QA" }])
     } else if (activeTab === "past-performance") {
       // High Priority - filter by HIGH severity
@@ -408,8 +416,8 @@ export function DataTable({
 
   const sortedData = React.useMemo(() => {
     if (activeTab === "focus-documents") {
-      // Sort by most recent updates (limit field contains timestamp)
-      return [...data].sort((a, b) => new Date(b.limit).getTime() - new Date(a.limit).getTime()).slice(0, 5)
+      // Sort by most recent updates (due_date field contains timestamp)
+      return [...data].sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime()).slice(0, 5)
     }
     return data
   }, [data, activeTab])
@@ -474,6 +482,7 @@ export function DataTable({
             <SelectValue placeholder="Select a view" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all-items">All Items</SelectItem>
             <SelectItem value="outline">Ready for QA</SelectItem>
             <SelectItem value="past-performance">High Priority</SelectItem>
             <SelectItem value="key-personnel">Critical Issues</SelectItem>
@@ -481,6 +490,7 @@ export function DataTable({
           </SelectContent>
         </Select>
         <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
+          <TabsTrigger value="all-items">All Items</TabsTrigger>
           <TabsTrigger value="outline">Ready for QA</TabsTrigger>
           <TabsTrigger value="past-performance">
             High Priority
@@ -530,6 +540,139 @@ export function DataTable({
           </Button>
         </div>
       </div>
+      <TabsContent
+        value="all-items"
+        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+      >
+        <div className="overflow-hidden rounded-lg border">
+          <DndContext
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragEnd={handleDragEnd}
+            sensors={sensors}
+            id={sortableId}
+          >
+            <Table>
+              <TableHeader className="bg-muted sticky top-0 z-10">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id} colSpan={header.colSpan}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      )
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody className="**:data-[slot=table-cell]:first:w-8">
+                {table.getRowModel().rows?.length ? (
+                  <SortableContext
+                    items={dataIds}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {table.getRowModel().rows.map((row) => (
+                      <DraggableRow key={row.id} row={row} />
+                    ))}
+                  </SortableContext>
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      No results.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </DndContext>
+        </div>
+        <div className="flex items-center justify-between px-4">
+          <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <div className="flex w-full items-center gap-8 lg:w-fit">
+            <div className="hidden items-center gap-2 lg:flex">
+              <Label htmlFor="rows-per-page" className="text-sm font-medium">
+                Rows per page
+              </Label>
+              <Select
+                value={`${table.getState().pagination.pageSize}`}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value))
+                }}
+              >
+                <SelectTrigger size="sm" className="w-20" id="rows-per-page">
+                  <SelectValue
+                    placeholder={table.getState().pagination.pageSize}
+                  />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[10, 20, 30, 40, 50].map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex w-fit items-center justify-center text-sm font-medium">
+              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
+            </div>
+            <div className="ml-auto flex items-center gap-2 lg:ml-0">
+              <Button
+                variant="outline"
+                className="hidden h-8 w-8 p-0 lg:flex"
+                onClick={() => table.setPageIndex(0)}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to first page</span>
+                <IconChevronsLeft />
+              </Button>
+              <Button
+                variant="outline"
+                className="size-8"
+                size="icon"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to previous page</span>
+                <IconChevronLeft />
+              </Button>
+              <Button
+                variant="outline"
+                className="size-8"
+                size="icon"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to next page</span>
+                <IconChevronRight />
+              </Button>
+              <Button
+                variant="outline"
+                className="hidden size-8 lg:flex"
+                size="icon"
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to last page</span>
+                <IconChevronsRight />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </TabsContent>
       <TabsContent
         value="outline"
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
@@ -821,8 +964,8 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 <Input id="target" defaultValue={item.target} />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Due Date</Label>
-                <Input id="limit" defaultValue={item.limit} />
+                <Label htmlFor="due_date">Due Date</Label>
+                <Input id="due_date" defaultValue={item.due_date} />
               </div>
             </div>
             <div className="flex flex-col gap-3">
