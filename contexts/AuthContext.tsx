@@ -21,18 +21,21 @@ export interface TeamInvitation {
   inviter_name: string
 }
 
+// Special marker for "All Projects" selection
+export const ALL_PROJECTS_MARKER = 'ALL_PROJECTS' as const
+
 interface AuthContextType {
   user: User | null
   loading: boolean
   projects: Project[]
-  currentProject: Project | null
+  currentProject: Project | null | typeof ALL_PROJECTS_MARKER
   invitations: TeamInvitation[]
   pendingInvitationsCount: number
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signUp: (email: string, password: string, name?: string) => Promise<{ error: any; data: any }>
   signOut: () => Promise<{ error: any }>
   createProject: (name: string, description?: string) => Promise<{ error: any; data: any }>
-  setCurrentProject: (project: Project | null) => void
+  setCurrentProject: (project: Project | null | typeof ALL_PROJECTS_MARKER) => void
   fetchProjects: () => Promise<void>
   fetchInvitations: () => Promise<void>
   acceptInvitation: (invitationId: string) => Promise<{ error: any }>
@@ -45,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [projects, setProjects] = useState<Project[]>([])
-  const [currentProject, setCurrentProject] = useState<Project | null>(null)
+  const [currentProject, setCurrentProject] = useState<Project | null | typeof ALL_PROJECTS_MARKER>(null)
   const [hasRestoredProject, setHasRestoredProject] = useState(false)
   const [invitations, setInvitations] = useState<TeamInvitation[]>([])
   const [pendingInvitationsCount, setPendingInvitationsCount] = useState(0)
@@ -382,6 +385,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (savedProjectId) {
           console.log('Looking for project with ID:', savedProjectId)
+          
+          // Check if it's the "All Projects" marker
+          if (savedProjectId === ALL_PROJECTS_MARKER) {
+            console.log('Setting current project to All Projects')
+            setCurrentProject(ALL_PROJECTS_MARKER)
+            setHasRestoredProject(true)
+            return
+          }
+          
           console.log('Project IDs in array:', projects.map(p => p.id))
           const savedProject = projects.find(project => project.id === savedProjectId)
           console.log('Found saved project:', savedProject)
@@ -403,8 +415,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // If no saved project or saved project not found, set the first project
-      console.log('No saved project found, setting to first project:', projects[0].name)
-      setCurrentProject(projects[0])
+      if (projects.length > 0) {
+        console.log('No saved project found, setting to first project:', projects[0].name)
+        setCurrentProject(projects[0])
+      } else {
+        console.log('No projects available, setting to All Projects')
+        setCurrentProject(ALL_PROJECTS_MARKER)
+      }
       setHasRestoredProject(true)
     }
   }, [projects, hasRestoredProject])
@@ -592,12 +609,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const handleSetCurrentProject = (project: Project | null) => {
-    console.log('Setting current project to:', project?.name || 'null')
+  const handleSetCurrentProject = (project: Project | null | typeof ALL_PROJECTS_MARKER) => {
+    console.log('Setting current project to:', project === ALL_PROJECTS_MARKER ? 'All Projects' : project?.name || 'null')
     setCurrentProject(project)
     // Save the selected project to localStorage
     try {
-      if (project) {
+      if (project === ALL_PROJECTS_MARKER) {
+        console.log('Saving ALL_PROJECTS marker to localStorage')
+        localStorage.setItem('selectedProjectId', ALL_PROJECTS_MARKER)
+        // Verify the save worked
+        const saved = localStorage.getItem('selectedProjectId')
+        console.log('Verification - saved value:', saved)
+        console.log('Verification - matches expected:', saved === ALL_PROJECTS_MARKER)
+      } else if (project) {
         console.log('Saving project ID to localStorage:', project.id)
         localStorage.setItem('selectedProjectId', project.id)
         // Verify the save worked

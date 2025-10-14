@@ -7,7 +7,7 @@ import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import { ProtectedRoute } from "@/components/protected-route"
 import { NoProjectsMessage } from "@/components/no-projects-message"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth, ALL_PROJECTS_MARKER } from "@/contexts/AuthContext"
 import {
   SidebarInset,
   SidebarProvider,
@@ -42,9 +42,12 @@ interface DashboardData {
     limit: string
     reviewer: string
     source: string
+    project?: string
   }>
   totalBugs: number
   totalTodos: number
+  isAllProjects: boolean
+  accessibleProjectCount: number
 }
 
 export default function Page() {
@@ -70,7 +73,11 @@ export default function Page() {
           throw new Error('No access token')
         }
 
-        const response = await fetch('/api/dashboard', {
+        // Determine the projectId parameter based on currentProject
+        const projectId = currentProject === ALL_PROJECTS_MARKER ? null : currentProject?.id
+        const url = projectId ? `/api/dashboard?projectId=${projectId}` : '/api/dashboard'
+        
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
@@ -92,7 +99,7 @@ export default function Page() {
     }
 
     fetchDashboardData()
-  }, [user])
+  }, [user, currentProject])
 
   // Fetch user role for current project
   useEffect(() => {
@@ -264,9 +271,11 @@ export default function Page() {
                   <div>
                     <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
                     <p className="text-muted-foreground">
-                      {currentProject ? 
-                        `Overview for ${currentProject.name}` : 
-                        'Your project overview'
+                      {currentProject === ALL_PROJECTS_MARKER 
+                        ? `Overview for All Projects (${dashboardData?.accessibleProjectCount || 0} projects)` 
+                        : currentProject && typeof currentProject === 'object' 
+                          ? `Overview for ${currentProject.name}` 
+                          : 'Your project overview'
                       }
                     </p>
                   </div>

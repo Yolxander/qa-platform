@@ -31,48 +31,92 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
+    const isAllProjects = !projectId || projectId === 'null' || projectId === 'undefined'
 
-    // Build the base query for bugs
-    let bugsQuery = supabase
-      .from('bugs')
-      .select('*')
-      .eq('user_id', user.id)
+    let bugs, todos, accessibleProjectIds
 
-    // Add project filter if specified
-    if (projectId) {
-      bugsQuery = bugsQuery.eq('project_id', projectId)
+    if (isAllProjects) {
+      // Get all accessible projects for the user
+      const { data: ownedProjects, error: ownedError } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('user_id', user.id)
+
+      if (ownedError) {
+        console.error('Error fetching owned projects:', ownedError)
+        return NextResponse.json({ error: 'Failed to fetch owned projects' }, { status: 500 })
+      }
+
+      // Get invited projects
+      const { data: memberProjects, error: memberError } = await supabase
+        .rpc('get_member_projects', { user_profile_id: user.id })
+
+      if (memberError) {
+        console.error('Error fetching member projects:', memberError)
+        return NextResponse.json({ error: 'Failed to fetch member projects' }, { status: 500 })
+      }
+
+      // Combine all accessible project IDs
+      const ownedProjectIds = ownedProjects?.map(p => p.id) || []
+      const invitedProjectIds = memberProjects?.map(p => p.project_id) || []
+      accessibleProjectIds = [...new Set([...ownedProjectIds, ...invitedProjectIds])]
+
+      console.log('All Projects Mode - Accessible project IDs:', accessibleProjectIds)
+
+      // Fetch bugs from all accessible projects
+      const { data: bugsData, error: bugsError } = await supabase
+        .from('bugs')
+        .select('*, projects!inner(name)')
+        .in('project_id', accessibleProjectIds)
+
+      if (bugsError) {
+        console.error('Error fetching bugs:', bugsError)
+        return NextResponse.json({ error: 'Failed to fetch bugs' }, { status: 500 })
+      }
+
+      // Fetch todos from all accessible projects
+      const { data: todosData, error: todosError } = await supabase
+        .from('todos_with_assignee_names')
+        .select('*, projects!inner(name)')
+        .in('project_id', accessibleProjectIds)
+
+      if (todosError) {
+        console.error('Error fetching todos:', todosError)
+        return NextResponse.json({ error: 'Failed to fetch todos' }, { status: 500 })
+      }
+
+      bugs = bugsData
+      todos = todosData
+    } else {
+      // Single project mode - existing logic
+      const { data: bugsData, error: bugsError } = await supabase
+        .from('bugs')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('project_id', projectId)
+
+      if (bugsError) {
+        console.error('Error fetching bugs:', bugsError)
+        return NextResponse.json({ error: 'Failed to fetch bugs' }, { status: 500 })
+      }
+
+      const { data: todosData, error: todosError } = await supabase
+        .from('todos_with_assignee_names')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('project_id', projectId)
+
+      if (todosError) {
+        console.error('Error fetching todos:', todosError)
+        return NextResponse.json({ error: 'Failed to fetch todos' }, { status: 500 })
+      }
+
+      bugs = bugsData
+      todos = todosData
     }
 
-    // Get bugs data
-    const { data: bugs, error: bugsError } = await bugsQuery
-
-    if (bugsError) {
-      console.error('Error fetching bugs:', bugsError)
-      return NextResponse.json({ error: 'Failed to fetch bugs' }, { status: 500 })
-    }
-
-    console.log('Dashboard API - Bugs found:', bugs?.length || 0, 'Project ID:', projectId)
-
-    // Build the base query for todos
-    let todosQuery = supabase
-      .from('todos_with_assignee_names')
-      .select('*')
-      .eq('user_id', user.id)
-
-    // Add project filter if specified
-    if (projectId) {
-      todosQuery = todosQuery.eq('project_id', projectId)
-    }
-
-    // Get todos data
-    const { data: todos, error: todosError } = await todosQuery
-
-    if (todosError) {
-      console.error('Error fetching todos:', todosError)
-      return NextResponse.json({ error: 'Failed to fetch todos' }, { status: 500 })
-    }
-
-    console.log('Dashboard API - Todos found:', todos?.length || 0, 'Project ID:', projectId)
+    console.log('Dashboard API - Bugs found:', bugs?.length || 0, 'Project ID:', projectId, 'All Projects:', isAllProjects)
+    console.log('Dashboard API - Todos found:', todos?.length || 0, 'Project ID:', projectId, 'All Projects:', isAllProjects)
 
     // Calculate dashboard metrics
     const totalBugs = bugs?.length || 0
@@ -143,7 +187,8 @@ export async function GET(request: NextRequest) {
         target: bug.assignee,
         limit: bug.created_at,
         reviewer: bug.reporter,
-        source: 'bug'
+        source: 'bug',
+        project: isAllProjects ? bug.projects?.name || 'Unknown Project' : undefined
       })),
       ...(todos || []).map(todo => ({
         id: todo.id + 10000, // Offset to avoid ID conflicts
@@ -153,7 +198,8 @@ export async function GET(request: NextRequest) {
         target: todo.assignee_name,
         limit: todo.due_date,
         reviewer: 'Assign reviewer',
-        source: 'todo'
+        source: 'todo',
+        project: isAllProjects ? todo.projects?.name || 'Unknown Project' : undefined
       }))
     ]
 
@@ -173,7 +219,9 @@ export async function GET(request: NextRequest) {
       chartData,
       tableData,
       totalBugs,
-      totalTodos: todos?.length || 0
+      totalTodos: todos?.length || 0,
+      isAllProjects,
+      accessibleProjectCount: isAllProjects ? accessibleProjectIds?.length || 0 : 1
     }
 
     return NextResponse.json(dashboardData)

@@ -51,7 +51,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth, ALL_PROJECTS_MARKER } from "@/contexts/AuthContext"
 
 const data = {
   navMain: [
@@ -310,18 +310,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 >
                   <div className="flex items-center gap-2">
                     <IconInnerShadowTop className="!size-5" />
-                    <span className="text-base font-semibold">{currentProject?.name || "No Project"}</span>
+                    <span className="text-base font-semibold">
+                      {currentProject === ALL_PROJECTS_MARKER 
+                        ? "All Projects" 
+                        : currentProject?.name || "No Project"
+                      }
+                    </span>
                   </div>
                   <IconChevronDown className="size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem
+                  onClick={() => setCurrentProject(ALL_PROJECTS_MARKER)}
+                  className={`flex items-center gap-2 ${
+                    currentProject === ALL_PROJECTS_MARKER ? "bg-accent" : ""
+                  }`}
+                >
+                  <IconChartBar className="size-4 text-purple-500" />
+                  <span className="flex-1 font-medium">All Projects</span>
+                  <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">
+                    Aggregated
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {projects.map((project) => (
                   <DropdownMenuItem
                     key={project.id}
                     onClick={() => setCurrentProject(project)}
                     className={`flex items-center gap-2 ${
-                      currentProject?.id === project.id ? "bg-accent" : ""
+                      currentProject && typeof currentProject === 'object' && currentProject.id === project.id ? "bg-accent" : ""
                     }`}
                   >
                     {project.isInvited ? (

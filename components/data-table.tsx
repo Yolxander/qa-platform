@@ -114,6 +114,7 @@ export const schema = z.object({
   target: z.string(),
   limit: z.string(),
   reviewer: z.string(),
+  project: z.string().optional(),
 })
 
 // Create a separate component for the drag handle
@@ -318,6 +319,23 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         </DropdownMenuContent>
       </DropdownMenu>
     ),
+  },
+  {
+    accessorKey: "project",
+    header: "Project",
+    cell: ({ row }) => {
+      const project = row.original.project
+      if (!project) return null
+      
+      return (
+        <div className="w-32">
+          <Badge variant="outline" className="px-2 py-1 text-xs">
+            {project}
+          </Badge>
+        </div>
+      )
+    },
+    enableHiding: true,
   },
 ]
 
