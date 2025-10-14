@@ -31,6 +31,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -393,6 +398,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 const isActive = pathname === item.url
                 const isUnderMaintenance = item.underMaintenance
                 const isInvitedProject = currentProject?.isInvited
+                const isAllProjects = currentProject === ALL_PROJECTS_MARKER
                 
                 // Hide "Ready for QA" for invited projects, but allow "Teams"
                 if (isInvitedProject && item.title === "Ready for QA") {
@@ -402,27 +408,54 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 return (
                   <SidebarMenuItem key={item.title}>
                     {isUnderMaintenance ? (
-                      <SidebarMenuButton 
-                        tooltip={item.title}
-                        onClick={() => handleMaintenanceFeatureClick(item.title)}
-                        className="cursor-pointer hover:bg-accent/50"
-                      >
-                        {item.icon && <item.icon />}
-                        <span>{item.title}</span>
-                        <IconTools className="ml-auto size-4 text-orange-500" />
-                      </SidebarMenuButton>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton 
+                            onClick={() => handleMaintenanceFeatureClick(item.title)}
+                            className="cursor-pointer hover:bg-accent/50"
+                          >
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                            <IconTools className="ml-auto size-4 text-orange-500" />
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{item.title}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : isAllProjects ? (
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton 
+                            className="opacity-50 cursor-not-allowed"
+                            onClick={(e) => e.preventDefault()}
+                          >
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="z-50">
+                          <p>Choose a project different from 'All Projects' to access this</p>
+                        </TooltipContent>
+                      </Tooltip>
                     ) : (
-                      <SidebarMenuButton 
-                        tooltip={item.title}
-                        isActive={isActive}
-                        className={isActive ? "bg-accent text-accent-foreground" : ""}
-                        asChild
-                      >
-                        <Link href={item.url}>
-                          {item.icon && <item.icon />}
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton 
+                            isActive={isActive}
+                            className={isActive ? "bg-accent text-accent-foreground" : ""}
+                            asChild
+                          >
+                            <Link href={item.url}>
+                              {item.icon && <item.icon />}
+                              <span>{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{item.title}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
                   </SidebarMenuItem>
                 )
@@ -434,19 +467,47 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
-              {data.navPro.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    tooltip={item.title}
-                    onClick={() => handleProFeatureClick(item.title)}
-                    className="cursor-pointer hover:bg-accent/50"
-                  >
-                    {item.icon && <item.icon />}
-                    <span>{item.title}</span>
-                    <IconLock className="ml-auto size-4 text-amber-500" />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {data.navPro.map((item) => {
+                const isAllProjects = currentProject === ALL_PROJECTS_MARKER
+                
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    {isAllProjects ? (
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton 
+                            className="opacity-50 cursor-not-allowed"
+                            onClick={(e) => e.preventDefault()}
+                          >
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                            <IconLock className="ml-auto size-4 text-amber-500" />
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="z-50">
+                          <p>Choose a project different from 'All Projects' to access this</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton 
+                            onClick={() => handleProFeatureClick(item.title)}
+                            className="cursor-pointer hover:bg-accent/50"
+                          >
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                            <IconLock className="ml-auto size-4 text-amber-500" />
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{item.title}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

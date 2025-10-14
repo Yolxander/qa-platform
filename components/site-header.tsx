@@ -11,6 +11,11 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { useAuth, ALL_PROJECTS_MARKER } from "@/contexts/AuthContext"
 import { supabase } from "@/lib/supabase"
 import { IconPlus } from "@tabler/icons-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const getSeverityBadgeVariant = (severity: string) => {
   switch (severity) {
@@ -200,12 +205,29 @@ export function SiteHeader() {
           {getBugBadges()}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <QuickCreateModal userRole={userRole}>
-            <Button className="hidden sm:flex" onClick={() => console.log('SiteHeader: Button clicked, userRole:', userRole)}>
-              <IconPlus className="size-4 mr-2" />
-              Quick Actions ({userRole})
-            </Button>
-          </QuickCreateModal>
+          {currentProject === ALL_PROJECTS_MARKER ? (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button 
+                  className="hidden sm:flex opacity-50 cursor-not-allowed" 
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <IconPlus className="size-4 mr-2" />
+                  Quick Actions ({userRole})
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="z-50">
+                <p>Choose a project different from 'All Projects' to access this</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <QuickCreateModal userRole={userRole}>
+              <Button className="hidden sm:flex" onClick={() => console.log('SiteHeader: Button clicked, userRole:', userRole)}>
+                <IconPlus className="size-4 mr-2" />
+                Quick Actions ({userRole})
+              </Button>
+            </QuickCreateModal>
+          )}
           <ThemeToggle />
         </div>
       </div>
