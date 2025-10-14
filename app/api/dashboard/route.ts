@@ -35,6 +35,8 @@ export async function GET(request: NextRequest) {
 
     let bugs, todos, accessibleProjectIds
 
+    console.log('Dashboard API - projectId:', projectId, 'isAllProjects:', isAllProjects)
+
     if (isAllProjects) {
       // Get all accessible projects for the user
       const { data: ownedProjects, error: ownedError } = await supabase
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest) {
 
       // Fetch todos from all accessible projects
       const { data: todosData, error: todosError } = await supabase
-        .from('todos_with_assignee_names')
+        .from('todos')
         .select('*, projects!inner(name)')
         .in('project_id', accessibleProjectIds)
 
@@ -101,7 +103,7 @@ export async function GET(request: NextRequest) {
       }
 
       const { data: todosData, error: todosError } = await supabase
-        .from('todos_with_assignee_names')
+        .from('todos')
         .select('*')
         .eq('user_id', user.id)
         .eq('project_id', projectId)
@@ -117,6 +119,8 @@ export async function GET(request: NextRequest) {
 
     console.log('Dashboard API - Bugs found:', bugs?.length || 0, 'Project ID:', projectId, 'All Projects:', isAllProjects)
     console.log('Dashboard API - Todos found:', todos?.length || 0, 'Project ID:', projectId, 'All Projects:', isAllProjects)
+    console.log('Dashboard API - Sample bugs:', bugs?.slice(0, 2))
+    console.log('Dashboard API - Sample todos:', todos?.slice(0, 2))
 
     // Calculate dashboard metrics
     const totalBugs = bugs?.length || 0
@@ -195,7 +199,7 @@ export async function GET(request: NextRequest) {
         header: todo.title,
         type: todo.severity,
         status: todo.status,
-        target: todo.assignee_name,
+        target: todo.assignee,
         limit: todo.due_date,
         reviewer: 'Assign reviewer',
         source: 'todo',

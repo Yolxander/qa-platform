@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { QuickCreateModal } from "@/components/quick-create-modal"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth, ALL_PROJECTS_MARKER } from "@/contexts/AuthContext"
 import { supabase } from "@/lib/supabase"
 import { IconPlus } from "@tabler/icons-react"
 
@@ -102,7 +102,20 @@ export function SiteHeader() {
   // Fetch user role for current project
   useEffect(() => {
     const fetchUserRole = async () => {
-      if (!user || !currentProject) {
+      if (!user) {
+        setUserRole('guest')
+        setRoleLoading(false)
+        return
+      }
+
+      // If All Projects is selected, set role to owner (can view all their projects)
+      if (currentProject === ALL_PROJECTS_MARKER) {
+        setUserRole('owner')
+        setRoleLoading(false)
+        return
+      }
+
+      if (!currentProject) {
         setUserRole('guest')
         setRoleLoading(false)
         return

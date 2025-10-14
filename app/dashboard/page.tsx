@@ -61,7 +61,7 @@ export default function Page() {
   // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user) return
+      if (!user || currentProject === undefined) return
 
       try {
         setDashboardLoading(true)
@@ -77,6 +77,8 @@ export default function Page() {
         const projectId = currentProject === ALL_PROJECTS_MARKER ? null : currentProject?.id
         const url = projectId ? `/api/dashboard?projectId=${projectId}` : '/api/dashboard'
         
+        console.log('Dashboard - Fetching data:', { currentProject, projectId, url })
+        
         const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -89,6 +91,7 @@ export default function Page() {
         }
 
         const data = await response.json()
+        console.log('Dashboard - Received data:', data)
         setDashboardData(data)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
@@ -104,7 +107,20 @@ export default function Page() {
   // Fetch user role for current project
   useEffect(() => {
     const fetchUserRole = async () => {
-      if (!user || !currentProject) {
+      if (!user) {
+        setUserRole('guest')
+        setRoleLoading(false)
+        return
+      }
+
+      // If All Projects is selected, set role to owner (can view all their projects)
+      if (currentProject === ALL_PROJECTS_MARKER) {
+        setUserRole('owner')
+        setRoleLoading(false)
+        return
+      }
+
+      if (!currentProject) {
         setUserRole('guest')
         setRoleLoading(false)
         return
